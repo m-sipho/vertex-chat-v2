@@ -66,6 +66,10 @@ class Room_Manager:
         return {"status": "pending", "message": "Waiting for host approval"}
     
     async def approve_user(self, host_username, room_code, target_username):
+        '''Logic to approve a pending user'''
+        if room_code not in self._active_rooms:
+            raise RoomNotFoundError(f"Room '{room_code}' does not exist.")
+         
         room = self._active_rooms[room_code]
 
         if room['host'] != host_username:
