@@ -82,6 +82,22 @@ class Room_Manager:
         
         raise UserNotFoundError(f"'{target_username}' not found on waiting users")
     
+    async def reject_user(self, host_username, room_code, target_username):
+        '''Logic to approve a pending user'''
+        if room_code not in self._active_rooms:
+            raise RoomNotFoundError(f"Room '{room_code}' does not exist.")
+         
+        room = self._active_rooms[room_code]
+
+        if room['host'] != host_username:
+            raise UserNotAuthorizedError(f"'{host_username}' you are not the host of room.")
+        
+        if target_username in room['pending_users']:
+            room['pending_users'].remove(target_username)
+            return {"status": "removed", "message": f"'{target_username}' is rejected to join"}
+        
+        raise UserNotFoundError(f"'{target_username}' not found on waiting users")
+    
     async def leave_room(self, username, room_code):
         '''Logic for garbage collection'''
         if room_code in self._active_rooms:
