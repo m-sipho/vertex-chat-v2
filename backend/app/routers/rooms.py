@@ -9,11 +9,11 @@ router = APIRouter(
 
 @router.post("/create-room")
 async def create_room(request: CreateRequest):
-    results = global_manager.create_room(request.host_username)
+    results = await global_manager.create_room(request.host_username)
     return results
 
 @router.post("/join-room")
 async def join(request: JoinLeaveRequest):
-    results = global_manager.request_to_join_room(request.username, request.room_code)
+    results = await global_manager.request_to_join_room(request.username, request.room_code)
     return results
 

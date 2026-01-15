@@ -33,7 +33,7 @@ class Room_Manager:
         password = ''.join(secrets.choice(alphabet) for _ in range(length))
         return password
 
-    def create_room(self, host_username):
+    async def create_room(self, host_username):
         '''Logic to save the room and the host'''
         max_retries = 10
         for _ in range(max_retries):
@@ -48,7 +48,7 @@ class Room_Manager:
         raise NoAvailableRoomError("No available rooms")
 
 
-    def request_to_join_room(self, username, room_code):
+    async def request_to_join_room(self, username, room_code):
         '''Logic to add a user to an existing room'''
         if room_code not in self._active_rooms:
             raise RoomNotFoundError(f"Room '{room_code}' does not exist.")
@@ -65,7 +65,7 @@ class Room_Manager:
         room['pending_users'].append(username)
         return {"status": "pending", "message": "Waiting for host approval"}
     
-    def approve_user(self, host_username, room_code, target_username):
+    async def approve_user(self, host_username, room_code, target_username):
         room = self._active_rooms[room_code]
 
         if room['host'] != host_username:
@@ -78,7 +78,7 @@ class Room_Manager:
         
         raise UserNotFoundError(f"'{target_username}' not found on waiting users")
     
-    def leave_room(self, username, room_code):
+    async def leave_room(self, username, room_code):
         '''Logic for garbage collection'''
         if room_code in self._active_rooms:
             # Check user from active list
