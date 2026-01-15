@@ -51,15 +51,15 @@ class Room_Manager:
     def request_to_join_room(self, username, room_code):
         '''Logic to add a user to an existing room'''
         if room_code not in self._active_rooms:
-            raise RoomNotFoundError("Room does not exist.")
+            raise RoomNotFoundError(f"Room '{room_code}' does not exist.")
         
         room = self._active_rooms[room_code]
 
         if username in room['active_users']:
-            raise UserAlreadyInRoomError(f"{username} already in room.")
+            raise UserAlreadyInRoomError(f"'{username}' already in room.")
         
         if username in room['pending_users']:
-            raise UserAlreadyInAwaitingError(f"{username} already awaiting approval.")
+            raise UserAlreadyInAwaitingError(f"'{username}' already awaiting approval.")
         
         # Put them in the waiting room
         room['pending_users'].append(username)
@@ -69,14 +69,14 @@ class Room_Manager:
         room = self._active_rooms[room_code]
 
         if room['host'] != host_username:
-            raise UserNotAuthorizedError(f"{host_username} you are not the host of room.")
+            raise UserNotAuthorizedError(f"'{host_username}' you are not the host of room.")
         
         if target_username in room['pending_users']:
             room['active_users'].append(target_username)
             room['pending_users'].remove(target_username)
-            return {"status": "approved", "message": f"{target_username} joined the room"}
+            return {"status": "approved", "message": f"'{target_username}' joined the room"}
         
-        raise UserNotFoundError(f"[{target_username}] not found on waiting users")
+        raise UserNotFoundError(f"'{target_username}' not found on waiting users")
     
     def leave_room(self, username, room_code):
         '''Logic for garbage collection'''
@@ -88,7 +88,7 @@ class Room_Manager:
                 # Check if the room is empty
                 if not self._active_rooms[room_code]['active_users']:
                     del self._active_rooms[room_code]
-                    return f"Room {room_code} is empty. thus DELETED."
-                return {"status": "left", "message": f"{username} left successfully."}
-            raise UserNotFoundError(f"{username} is not in room {room_code}.")
-        raise RoomNotFoundError(f"Room {room_code} doesn't exist.")
+                    return f"Room '{room_code}' is empty. thus DELETED."
+                return {"status": "left", "message": f"'{username}' left successfully."}
+            raise UserNotFoundError(f"'{username}' is not in room {room_code}.")
+        raise RoomNotFoundError(f"Room '{room_code}' doesn't exist.")
