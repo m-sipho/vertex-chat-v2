@@ -17,3 +17,7 @@ async def join(request: JoinLeaveRequest):
     results = await global_manager.request_to_join_room(request.username, request.room_code)
     return results
 
+@router.post("/approve")
+async def approve(request: ApproveRequest):
+    status = await global_manager.approve_user(request.host_username, request.room_code, request.target_username)
+    return status
