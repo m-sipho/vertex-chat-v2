@@ -112,3 +112,9 @@ class Room_Manager:
                 return {"status": "left", "message": f"'{username}' left successfully."}
             raise UserNotFoundError(f"'{username}' is not in room {room_code}.")
         raise RoomNotFoundError(f"Room '{room_code}' doesn't exist.")
+    
+    async def get_room_state(self, room_code):
+        if room_code not in self._active_rooms:
+            raise RoomNotFoundError(f"Room '{room_code}' doesn't exist.")
+        
+        return self._active_rooms[room_code]

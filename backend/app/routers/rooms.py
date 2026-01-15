@@ -3,7 +3,7 @@ from ..services.instance import global_manager
 from ..schemas import CreateRequest, JoinLeaveRequest, ApproveRequest
 
 router = APIRouter(
-    prefix="/rooms",
+    prefix="",
     tags=["Room Manager"]
 )
 
@@ -26,3 +26,8 @@ async def approve(request: ApproveRequest):
 async def reject(request: ApproveRequest):
     status = await global_manager.reject_user(request.host_username, request.room_code, request.target_username)
     return status
+
+@router.get("/room/{room_code}")
+async def get_room(room_code: str):
+    result = await global_manager.get_room_state(room_code)
+    return result
