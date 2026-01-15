@@ -21,3 +21,8 @@ async def join(request: JoinLeaveRequest):
 async def approve(request: ApproveRequest):
     status = await global_manager.approve_user(request.host_username, request.room_code, request.target_username)
     return status
+
+@router.post("/reject")
+async def reject(request: ApproveRequest):
+    status = await global_manager.reject_user(request.host_username, request.room_code, request.target_username)
+    return status
