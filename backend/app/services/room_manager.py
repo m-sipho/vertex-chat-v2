@@ -1,5 +1,13 @@
 import string
 import secrets
+from .exceptions import (
+    NoAvailableRoomError,
+    UserAlreadyInRoomError,
+    UserAlreadyInAwaitingError,
+    UserNotAuthorizedError,
+    UserNotFoundError,
+    RoomNotFoundError
+)
 
 class Room_Manager:
     def __init__(self):
@@ -27,48 +35,48 @@ class Room_Manager:
 
     def create_room(self, host_username):
         '''Logic to save the room and the host'''
-        code = self.generate_room_code()
-        while code in self._active_rooms:
+        max_retries = 10
+        for _ in range(max_retries):
             code = self.generate_room_code()
-        
-        self._active_rooms[code] = {
-            'host': host_username,
-            'active_users': [host_username],
-            'pending_users': []
-        }
-
-        return code
+            if code not in self._active_rooms:
+                self._active_rooms[code] = {
+                    'host': host_username,
+                    'active_users': [host_username],
+                    'pending_users': []
+                }
+                return {"status": "success", "room_code": code, "message": "Room created successfully."}
+        raise NoAvailableRoomError("No available rooms")
 
 
     def request_to_join_room(self, username, room_code):
         '''Logic to add a user to an existing room'''
         if room_code not in self._active_rooms:
-            return "[ERROR]: Room does not exist"
+            raise RoomNotFoundError("Room does not exist.")
         
         room = self._active_rooms[room_code]
 
         if username in room['active_users']:
-            return f"[ERROR]: {username} already in room."
+            raise UserAlreadyInRoomError(f"{username} already in room.")
         
         if username in room['pending_users']:
-            return f"[ERROR]: {username} already awaiting approval."
+            raise UserAlreadyInAwaitingError(f"{username} already awaiting approval.")
         
         # Put them in the waiting room
         room['pending_users'].append(username)
-        return f"{username} AWAITING APPROVAL..."
+        return {"status": "pending", "message": "Waiting for host approval"}
     
     def approve_user(self, host_username, room_code, target_username):
         room = self._active_rooms[room_code]
 
         if room['host'] != host_username:
-            return f"[ERROR] {host_username} you are not the host of room"
+            raise UserNotAuthorizedError(f"{host_username} you are not the host of room.")
         
         if target_username in room['pending_users']:
             room['active_users'].append(target_username)
             room['pending_users'].remove(target_username)
-            return f"{target_username} joined the Room"
+            return {"status": "approved", "message": f"{target_username} joined the room"}
         
-        return f"[{target_username}] not found on waiting users"
+        raise UserNotFoundError(f"[{target_username}] not found on waiting users")
     
     def leave_room(self, username, room_code):
         '''Logic for garbage collection'''
@@ -81,6 +89,6 @@ class Room_Manager:
                 if not self._active_rooms[room_code]['active_users']:
                     del self._active_rooms[room_code]
                     return f"Room {room_code} is empty. thus DELETED."
-                return f"{username} left."
-            return f"{username} is not in room {room_code}."
-        return f"Room {room_code} doesn't exist."
+                return {"status": "left", "message": f"{username} left successfully."}
+            raise UserNotFoundError(f"{username} is not in room {room_code}.")
+        raise RoomNotFoundError(f"Room {room_code} doesn't exist.")
