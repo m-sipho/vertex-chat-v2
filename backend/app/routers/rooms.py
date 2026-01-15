@@ -1,0 +1,19 @@
+from fastapi import APIRouter, HTTPException
+from ..services.instance import global_manager
+from ..schemas import CreateRequest, JoinLeaveRequest, ApproveRequest
+
+router = APIRouter(
+    prefix="/rooms",
+    tags=["Room Manager"]
+)
+
+@router.post("/create-room")
+async def create_room(request: CreateRequest):
+    results = global_manager.create_room(request.host_username)
+    return results
+
+@router.post("/join-room")
+async def join(request: JoinLeaveRequest):
+    results = global_manager.request_to_join_room(request.username, request.room_code)
+    return results
+
