@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status
-from ..services.instance import global_manager
-from ..schemas import CreateRequest, JoinLeaveRequest, ApproveRequest
+from app.api.rooms.dependencies import global_manager
+from .schemas import CreateRequest, JoinLeaveRequest, ApproveRequest
 
 router = APIRouter(
     prefix="",

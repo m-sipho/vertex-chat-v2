@@ -1,6 +1,6 @@
 import string
 import secrets
-from .exceptions import (
+from app.core.exceptions import (
     NoAvailableRoomError,
     UserAlreadyInRoomError,
     UserAlreadyInAwaitingError,

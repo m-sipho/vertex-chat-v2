@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
-from .services.room_manager import Room_Manager
-from .routers import rooms
-from .services.exceptions import (
+from app.api.rooms.service import Room_Manager
+from app.api.rooms.router import router as rooms_router
+from app.core.exceptions import (
     NoAvailableRoomError,
     UserAlreadyInRoomError,
     UserAlreadyInAwaitingError,
@@ -56,7 +56,7 @@ async def room_not_found_handler(request: Request, exc: RoomNotFoundError):
         content={"message": str(exc)}
     )
 
-app.include_router(rooms.router)
+app.include_router(rooms_router)
 
 @app.get("/")
 async def root():
