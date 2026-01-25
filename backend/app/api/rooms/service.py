@@ -13,6 +13,20 @@ class Room_Manager:
     def __init__(self):
         # Simulate a database for now
         
+        # New structure:
+        # {
+        #     'ROOM_CODE': {
+        #         'host_id': 'user_123',
+        #         'active_users': {
+        #             'user_123': <User Object Mthokozisi>,
+        #             'user_740': <User Object Mthokozisi>
+        #         },
+        #         'pending_users': {
+        #             'user_675': <User Object Sipho>
+        #         }
+        #     }
+        # }
+
         # Structure:
         # {  
         #     'ROOM_CODE': {
@@ -118,3 +132,6 @@ class Room_Manager:
             raise RoomNotFoundError(f"Room '{room_code}' doesn't exist.")
         
         return self._active_rooms[room_code]
+    
+    async def get_all_rooms_info(self):
+        return self._active_rooms
