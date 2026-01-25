@@ -4,7 +4,6 @@ class CreateRequest(BaseModel):
     host_username: str
 
 class JoinLeaveRequest(BaseModel):
-    username: str
     room_code: str
 
 class ApproveRequest(BaseModel):

@@ -1,5 +1,7 @@
 import string
 import secrets
+from fastapi import HTTPException, status
+from app.api.auth.schemas import User
 from app.core.exceptions import (
     NoAvailableRoomError,
     UserAlreadyInRoomError,
@@ -47,36 +49,51 @@ class Room_Manager:
         password = ''.join(secrets.choice(alphabet) for _ in range(length))
         return password
 
-    async def create_room(self, host_username):
+    async def create_room(self, host: User):
         '''Logic to save the room and the host'''
+        # Check if the user is a host in another room
+        for _, room_details in list(self._active_rooms.items()):
+            if room_details['host_id'] == host.id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="You can only host up to one room."
+                )
+        
         max_retries = 10
         for _ in range(max_retries):
             code = self.generate_room_code()
             if code not in self._active_rooms:
                 self._active_rooms[code] = {
-                    'host': host_username,
-                    'active_users': [host_username],
-                    'pending_users': []
+                    'host_id': host.id,
+                    'active_users': {
+                        host.id: host 
+                    },
+                    'pending_users': {}
                 }
                 return {"status": "success", "room_code": code, "message": "Room created successfully."}
         raise NoAvailableRoomError("No available rooms")
 
 
-    async def request_to_join_room(self, username, room_code):
+    async def request_to_join_room(self, user: User, room_code):
         '''Logic to add a user to an existing room'''
         if room_code not in self._active_rooms:
             raise RoomNotFoundError(f"Room '{room_code}' does not exist.")
         
         room = self._active_rooms[room_code]
+        clean_username = user.username.strip().lower()
 
-        if username in room['active_users']:
-            raise UserAlreadyInRoomError(f"'{username}' already in room.")
-        
-        if username in room['pending_users']:
-            raise UserAlreadyInAwaitingError(f"'{username}' already awaiting approval.")
+        # Ensure users with the same username are not in the same room
+        for user_info in room['active_users'].values():
+            if clean_username == user_info.username.strip().lower():
+                raise UserAlreadyInRoomError(f"'{user.username}' already in room.")
+
+        # Ensure users with the same username are not in the same waiting list
+        for user_info in room['pending_users'].values():
+            if clean_username == user_info.username.strip().lower():
+                raise UserAlreadyInAwaitingError(f"'{user.username}' already awaiting approval.")
         
         # Put them in the waiting room
-        room['pending_users'].append(username)
+        room['pending_users'][user.id] = user
         return {"status": "pending", "message": "Waiting for host approval"}
     
     async def approve_user(self, host_username, room_code, target_username):
