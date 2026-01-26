@@ -96,22 +96,31 @@ class Room_Manager:
         room['pending_users'][user.id] = user
         return {"status": "pending", "message": "Waiting for host approval"}
     
-    async def approve_user(self, host_username, room_code, target_username):
+    async def approve_user(self, host_id, room_code, target_username):
         '''Logic to approve a pending user'''
         if room_code not in self._active_rooms:
             raise RoomNotFoundError(f"Room '{room_code}' does not exist.")
          
         room = self._active_rooms[room_code]
 
-        if room['host'] != host_username:
-            raise UserNotAuthorizedError(f"'{host_username}' you are not the host of room.")
+        if room['host_id'] != host_id:
+            raise UserNotAuthorizedError("You are not the host of this room.")
         
-        if target_username in room['pending_users']:
-            room['active_users'].append(target_username)
-            room['pending_users'].remove(target_username)
-            return {"status": "approved", "message": f"'{target_username}' joined the room"}
+        clean_target_username = target_username.strip().lower()
+        user_to_approve = None
         
-        raise UserNotFoundError(f"'{target_username}' not found on waiting users")
+        for user_info in room['pending_users'].values():
+            if clean_target_username == user_info.username.strip().lower():
+                user_to_approve = user_info
+                break
+        
+        if not user_to_approve:
+            raise UserNotFoundError(f"'{target_username}' not found on waiting users")
+        
+
+        room['active_users'][user_to_approve.id] = user_to_approve
+        del room['pending_users'][user_to_approve.id]
+        return {"status": "approved", "message": f"'{user_to_approve.username}' joined the room"}
     
     async def reject_user(self, host_username, room_code, target_username):
         '''Logic to approve a pending user'''

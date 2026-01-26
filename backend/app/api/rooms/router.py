@@ -21,8 +21,8 @@ async def join(request: JoinLeaveRequest, current_user: Annotated[User, Depends(
     return results
 
 @router.post("/approve")
-async def approve(request: ApproveRequest, current_user: Annotated[LoginUser, Depends(get_current_user)]):
-    status = await global_manager.approve_user(request.host_username, request.room_code, request.target_username)
+async def approve(request: ApproveRequest, current_user: Annotated[User, Depends(get_current_user)]):
+    status = await global_manager.approve_user(current_user.id, request.room_code, request.target_username)
     return status
 
 @router.post("/reject")
