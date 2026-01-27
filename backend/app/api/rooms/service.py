@@ -226,7 +226,7 @@ class Room_Manager:
                 'message': f"Room {room_code} is empty and deleted"
             }
         
-        return {'status': 'deleted', 'message': f"{username} left successfully"}
+        return {'status': 'left', 'message': f"{username} left successfully"}
 
     async def get_room_state(self, room_code):
         if room_code not in self._active_rooms:
