@@ -84,7 +84,7 @@ class Room_Manager:
             if count >= 2:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="cannot join more that 2 rooms"
+                    detail="cannot join more than 2 rooms"
                 )
 
 
