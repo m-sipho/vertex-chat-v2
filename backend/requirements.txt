@@ -41,3 +41,5 @@ uvicorn==0.40.0
 watchfiles==1.1.1
 websockets==16.0
 PyJWT==2.10.1
+pytest
+pytest-asyncio
