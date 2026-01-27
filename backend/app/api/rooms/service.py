@@ -28,15 +28,6 @@ class Room_Manager:
         #         }
         #     }
         # }
-
-        # Structure:
-        # {  
-        #     'ROOM_CODE': {
-        #         'host': host_username,
-        #         'active_users': ['host_username],
-        #         'pending_users': []
-        #     }
-        # }
         self._active_rooms = {}
 
     def generate_room_code(self):
@@ -76,6 +67,27 @@ class Room_Manager:
 
     async def request_to_join_room(self, user: User, room_code):
         '''Logic to add a user to an existing room'''
+
+        count = 0
+
+        # Ensure users can only be in two rooms simultaneously
+        for _, room_details in self._active_rooms.items():
+            active_users = room_details['active_users']
+            pending_users = room_details['pending_users']
+
+            # Collect all rooms where the user is active or pending
+            if user.id in active_users:
+                count += 1
+            elif user.id in pending_users:
+                count += 1
+
+            if count >= 2:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="cannot join more that 2 rooms"
+                )
+
+
         if room_code not in self._active_rooms:
             raise RoomNotFoundError(f"Room '{room_code}' does not exist.")
         
