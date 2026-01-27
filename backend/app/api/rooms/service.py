@@ -78,7 +78,8 @@ class Room_Manager:
             # Collect all rooms where the user is active or pending
             if user.id in active_users:
                 count += 1
-            elif user.id in pending_users:
+                
+            if user.id in pending_users:
                 count += 1
 
             if count >= 2:
