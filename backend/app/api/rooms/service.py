@@ -158,7 +158,7 @@ class Room_Manager:
         del room['pending_users'][user_to_reject.id]
         return {"status": "removed", "message": f"'{target_username}' is rejected to join"}
     
-    async def leave_room(self, id, room_code, new_host_id: str = None):
+    async def leave_room(self, user_id, room_code, new_host_id: str = None):
         '''Logic for garbage collection'''
         # Check if the room exists
         if room_code not in self._active_rooms:
@@ -168,14 +168,14 @@ class Room_Manager:
         active_users = room['active_users']
         
         # Check user exists in the room
-        if id not in active_users:
+        if user_id not in active_users:
             raise UserNotFoundError(f"You are not in room {room_code}")
         
-        user_obj = active_users[id]
+        user_obj = active_users[user_id]
         username = user_obj.username
 
         # If the person leaving is the host
-        if id == room['host_id']:
+        if user_id == room['host_id']:
             # Check if there are other people in the room
             if len(active_users) > 1:
 
@@ -191,7 +191,7 @@ class Room_Manager:
                     raise UserNotFoundError("The user you selected to be the host is not in this room")
                 
                 # Check if that successor is not the current host
-                if id == new_host_id:
+                if user_id == new_host_id:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="You cannot assign yourself as a new host if you are leaving"
@@ -202,7 +202,7 @@ class Room_Manager:
                 new_host_username = active_users[new_host_id].username
 
                 # Remove the old host
-                del active_users[id]
+                del active_users[user_id]
 
                 return {
                     'status': 'left',
@@ -216,7 +216,7 @@ class Room_Manager:
                 }
         
         # If just a regular member leaves
-        del active_users[id]
+        del active_users[user_id]
 
         # Delete room if its empty
         if not active_users:
