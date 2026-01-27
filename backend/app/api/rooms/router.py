@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status, Depends
 from typing import Annotated
 from app.api.rooms.dependencies import global_manager
-from .schemas import CreateRequest, JoinLeaveRequest, ApproveRequest
+from .schemas import CreateRequest, JoinLeaveRequest, ApproveRequest, LeaveRequest
 from app.api.auth.dependencies import get_current_user
 from app.api.auth.schemas import LoginUser, User
 
@@ -26,8 +26,13 @@ async def approve(request: ApproveRequest, current_user: Annotated[User, Depends
     return status
 
 @router.post("/reject", status_code=status.HTTP_200_OK)
-async def reject(request: ApproveRequest, current_user: Annotated[LoginUser, Depends(get_current_user)]):
+async def reject(request: ApproveRequest, current_user: Annotated[User, Depends(get_current_user)]):
     status = await global_manager.reject_user(current_user.id, request.room_code, request.target_username)
+    return status
+
+@router.post("/leave-room", status_code=status.HTTP_200_OK)
+async def leave_room(request: LeaveRequest, current_user: Annotated[User, Depends(get_current_user)]):
+    status = await global_manager.leave_room(current_user.id, request.room_code, request.new_host_id)
     return status
 
 @router.get("/room/{room_code}")

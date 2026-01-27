@@ -146,21 +146,76 @@ class Room_Manager:
         del room['pending_users'][user_to_reject.id]
         return {"status": "removed", "message": f"'{target_username}' is rejected to join"}
     
-    async def leave_room(self, username, room_code):
+    async def leave_room(self, id, room_code, new_host_id: str = None):
         '''Logic for garbage collection'''
-        if room_code in self._active_rooms:
-            # Check user from active list
-            if username in self._active_rooms[room_code]['active_users']:
-                self._active_rooms[room_code]['active_users'].remove(username)
+        # Check if the room exists
+        if room_code not in self._active_rooms:
+            raise RoomNotFoundError(f"Room '{room_code}' does not exist.")
+        
+        room = self._active_rooms[room_code]
+        active_users = room['active_users']
+        
+        # Check user exists in the room
+        if id not in active_users:
+            raise UserNotFoundError(f"You are not in room {room_code}")
+        
+        user_obj = active_users[id]
+        username = user_obj.username
 
-                # Check if the room is empty
-                if not self._active_rooms[room_code]['active_users']:
-                    del self._active_rooms[room_code]
-                    return f"Room '{room_code}' is empty. thus DELETED."
-                return {"status": "left", "message": f"'{username}' left successfully."}
-            raise UserNotFoundError(f"'{username}' is not in room {room_code}.")
-        raise RoomNotFoundError(f"Room '{room_code}' doesn't exist.")
-    
+        # If the person leaving is the host
+        if id == room['host_id']:
+            # Check if there are other people in the room
+            if len(active_users) > 1:
+
+                # Check if the host has selected the successor
+                if not new_host_id:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="You are the host. Please select a host before leaving."
+                    )
+                
+                # Check if the selected successor is in the room
+                if new_host_id not in active_users:
+                    raise UserNotFoundError("The user you selected to be the host is not in this room")
+                
+                # Check if that successor is not the current host
+                if id == new_host_id:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="You cannot assign yourself as a new host if you are leaving"
+                    )
+                
+                # Transfer the crown
+                room["host_id"] = new_host_id
+                new_host_username = active_users[new_host_id].username
+
+                # Remove the old host
+                del active_users[id]
+
+                return {
+                    'status': 'left',
+                    'message': f"You left. {new_host_username} is now the host"
+                }
+            else:
+                del self._active_rooms[room_code]
+                return {
+                    'status': 'deleted',
+                    'message': f"Room {room_code} deleted (Host left and room was empty)"
+                }
+        
+        # If just a regular member leaves
+        del active_users[id]
+
+        # Delete room if its empty
+        if not active_users:
+            del self._active_rooms[room_code]
+            return {
+                'status': 'deleted',
+                'message': f"Room {room_code} is empty and deleted"
+            }
+        
+        return {'status': 'deleted', 'message': f"{username} left successfully"}
+
     async def get_room_state(self, room_code):
         if room_code not in self._active_rooms:
             raise RoomNotFoundError(f"Room '{room_code}' doesn't exist.")
