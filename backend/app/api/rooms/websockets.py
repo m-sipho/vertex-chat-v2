@@ -1,0 +1,102 @@
+from fastapi import WebSocket
+from typing import Dict, List
+
+class Connection_Manager:
+    def __init__(self):
+        """Websockets in a specific room"""
+        # Structure
+        # {
+        #     "Room_code_1": [
+        #         <WeSocket Object for Thabang>
+        #         <WeSocket Object for Banele>
+        #     ],
+        #     "Room_code_2": [
+        #         <WeSocket Object for Bandile>
+        #         <WeSocket Object for Sandile>
+        #         <WeSocket Object for Nonhle>
+        #     ]
+        # }
+        self._active_connections: Dict[str, List[WebSocket]] = {}
+    
+
+    async def connect(self, websocket: WebSocket, room_code: str):
+        """Accept a new WebSocket connection and register it to a room"""
+        await websocket.accept()
+
+        # If this is the first person joining a room, create a list for that room code
+        if room_code not in self._active_connections:
+            self._active_connections[room_code] = []
+        
+        print(f"client {websocket.client.host}:{websocket.client.port}")
+        self._active_connections[room_code].append(websocket)
+
+
+    def disconnect(self, websocket: WebSocket, room_code: str):
+        """Remove a WebSocket connection"""
+        # Check if the room exists
+        if room_code in self._active_connections:
+            # Attempt to remove the specific websocket from the list
+            if websocket in self._active_connections[room_code]:
+                self._active_connections[room_code].remove(websocket)
+
+            # Garbage collection: If the room has no sockets
+            if not self._active_connections[room_code]:
+                del self._active_connections[room_code]
+    
+
+    async def __broadcast(self, message: dict, room_code: str, exclude: WebSocket = None):
+        """Take a message and send it to everyone in the room"""
+        # Only send if the room exists
+        if room_code in self._active_connections:
+            # Iterate through every connection in a specifi room
+            for connection in self._active_connections[room_code]:
+                # Skip the sender if provided
+                if exclude == connection:
+                    continue
+
+                try:
+                    await connection.send_json(message)
+                except Exception as e:
+                    print(f"Error broadcasting to socket {e}")
+                    # Remove the broken socket
+                    self.disconnect(connection, room_code)
+    
+    
+    async def broadcast_chat_message(self, room_code: str, username: str, text: str, timestamp: str):
+        """Sending a usual text message"""
+        payload = {
+            'type': 'chat',
+            'username': username,
+            'messsage': text,
+            'timestamp': timestamp
+            # 'timestamp': datetime.now(timezone.utc).astimezone().isoformat()
+        }
+        await self.__broadcast(payload, room_code)
+    
+
+    async def broadcast_system_message(self, room_code: str, message: str):
+        """System alert (e.g. Thabang left the room)"""
+        payload = {
+            'type': 'system',
+            'message': message
+        }
+        await self.__broadcast(payload, room_code)
+
+    
+    async def broadcast_presence(self, room_code: str, username: str, status: str):
+        """Update presence of a user (e.g. 'active' or 'idle')"""
+        payload = {
+            'type': 'presence_update',
+            'username': username,
+            'status': status
+        }
+        await self.__broadcast(payload, room_code)
+
+    
+    async def broadcast_typing(self, username: str, room_code: str, sender_socket: WebSocket):
+        """Typing indicator"""
+        payload = {
+            'type': 'typing',
+            'username': username
+        }
+        await self.__broadcast(payload, room_code, exclude=sender_socket)
