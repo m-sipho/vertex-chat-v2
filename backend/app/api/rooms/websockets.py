@@ -67,7 +67,7 @@ class Connection_Manager:
         payload = {
             'type': 'chat',
             'username': username,
-            'messsage': text,
+            'message': text,
             'timestamp': timestamp
             # 'timestamp': datetime.now(timezone.utc).astimezone().isoformat()
         }
