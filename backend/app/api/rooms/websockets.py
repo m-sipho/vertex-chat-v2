@@ -42,6 +42,14 @@ class Connection_Manager:
             # Garbage collection: If the room has no sockets
             if not self._active_connections[room_code]:
                 del self._active_connections[room_code]
+        
+    
+    async def send_personal_message(self, message: dict, websocket: WebSocket):
+        """Send a message to a specific user"""
+        try:
+            await websocket.send_json(message)
+        except RuntimeError:
+            print("Attempted to send a personal message to a closed socket")
     
 
     async def __broadcast(self, message: dict, room_code: str, exclude: WebSocket = None):
