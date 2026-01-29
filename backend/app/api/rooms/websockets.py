@@ -30,7 +30,7 @@ class ConnectionManager:
         #     ]
         # }
         self._active_connections: Dict[str, List[WebSocket]] = {}
-        self.set_of_locks = [asyncio.Lock() for _ in range(256)]
+        self.set_of_locks = [asyncio.Lock() for _ in range(256)] # There will be room collisions if rooms > 256
     
 
     def _get_lock(self, room_code: str) -> asyncio.Lock:
