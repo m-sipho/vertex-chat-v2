@@ -11,7 +11,7 @@ from app.core.exceptions import (
     RoomNotFoundError
 )
 
-class Room_Manager:
+class RoomManager:
     def __init__(self):
         # Simulate a database for now
         

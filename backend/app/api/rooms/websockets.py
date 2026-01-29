@@ -1,7 +1,8 @@
 from fastapi import WebSocket
 from typing import Dict, List
+import asyncio
 
-class Connection_Manager:
+class ConnectionManager:
     def __init__(self):
         """Websockets in a specific room"""
         # Structure
@@ -17,57 +18,78 @@ class Connection_Manager:
         #     ]
         # }
         self._active_connections: Dict[str, List[WebSocket]] = {}
+        self.set_of_locks = [asyncio.Lock() for _ in range(256)]
+    
+
+    def _get_lock(self, room_code: str) -> asyncio.Lock:
+        """Deterministic way to get a lock for a specific room"""
+        lock_index = hash(room_code) % len(self.set_of_locks)
+        return self.set_of_locks[lock_index]
     
 
     async def connect(self, websocket: WebSocket, room_code: str):
         """Accept a new WebSocket connection and register it to a room"""
         await websocket.accept()
 
-        # If this is the first person joining a room, create a list for that room code
-        if room_code not in self._active_connections:
-            self._active_connections[room_code] = []
-        
-        print(f"client {websocket.client.host}:{websocket.client.port}")
-        self._active_connections[room_code].append(websocket)
+        async with self._get_lock(room_code):
+            # If this is the first person joining a room, create a list for that room code
+            if room_code not in self._active_connections:
+                self._active_connections[room_code] = []
+            
+            print(f"client {websocket.client.host}:{websocket.client.port}")
+            self._active_connections[room_code].append(websocket)
 
 
-    def disconnect(self, websocket: WebSocket, room_code: str):
+    async def disconnect(self, websocket: WebSocket, room_code: str):
         """Remove a WebSocket connection"""
-        # Check if the room exists
-        if room_code in self._active_connections:
-            # Attempt to remove the specific websocket from the list
-            if websocket in self._active_connections[room_code]:
-                self._active_connections[room_code].remove(websocket)
 
-            # Garbage collection: If the room has no sockets
-            if not self._active_connections[room_code]:
-                del self._active_connections[room_code]
+        async with self._get_lock(room_code):
+        # Check if the room exists
+            if room_code in self._active_connections:
+                # Attempt to remove the specific websocket from the list
+                if websocket in self._active_connections[room_code]:
+                    self._active_connections[room_code].remove(websocket)
+
+                # Garbage collection: If the room has no sockets
+                if not self._active_connections[room_code]:
+                    del self._active_connections[room_code]
+            
+        try:
+            websocket.close()
+        except Exception:
+            print("Most likely the socket was already closed")
+            pass # Most likely the socket was already closed
         
     
     async def send_personal_message(self, message: dict, websocket: WebSocket):
         """Send a message to a specific user"""
         try:
             await websocket.send_json(message)
-        except RuntimeError:
+        except Exception:
             print("Attempted to send a personal message to a closed socket")
     
 
-    async def __broadcast(self, message: dict, room_code: str, exclude: WebSocket = None):
+    async def _broadcast(self, message: dict, room_code: str, exclude: WebSocket = None):
         """Take a message and send it to everyone in the room"""
-        # Only send if the room exists
-        if room_code in self._active_connections:
-            # Iterate through every connection in a specifi room
-            for connection in self._active_connections[room_code]:
-                # Skip the sender if provided
-                if exclude == connection:
-                    continue
 
-                try:
-                    await connection.send_json(message)
-                except Exception as e:
-                    print(f"Error broadcasting to socket {e}")
-                    # Remove the broken socket
-                    self.disconnect(connection, room_code)
+        connections_copy = []
+        async with self._get_lock(room_code):
+            # Only send if the room exists
+            if room_code in self._active_connections:
+                connections_copy = list(self._active_connections[room_code])
+
+        # Iterate through every connection in a specifi room
+        for connection in connections_copy:
+            # Skip the sender if provided
+            if exclude == connection:
+                continue
+
+            try:
+                await connection.send_json(message)
+            except Exception as e:
+                print(f"Error broadcasting to socket {e}")
+                # Remove the broken socket
+                await self.disconnect(connection, room_code)
     
     
     async def broadcast_chat_message(self, room_code: str, username: str, text: str, timestamp: str):
@@ -79,7 +101,7 @@ class Connection_Manager:
             'timestamp': timestamp
             # 'timestamp': datetime.now(timezone.utc).astimezone().isoformat()
         }
-        await self.__broadcast(payload, room_code)
+        await self._broadcast(payload, room_code)
     
 
     async def broadcast_system_message(self, room_code: str, message: str):
@@ -88,7 +110,7 @@ class Connection_Manager:
             'type': 'system',
             'message': message
         }
-        await self.__broadcast(payload, room_code)
+        await self._broadcast(payload, room_code)
 
     
     async def broadcast_presence(self, room_code: str, username: str, status: str):
@@ -98,7 +120,7 @@ class Connection_Manager:
             'username': username,
             'status': status
         }
-        await self.__broadcast(payload, room_code)
+        await self._broadcast(payload, room_code)
 
     
     async def broadcast_typing(self, username: str, room_code: str, sender_socket: WebSocket):
@@ -107,4 +129,4 @@ class Connection_Manager:
             'type': 'typing',
             'username': username
         }
-        await self.__broadcast(payload, room_code, exclude=sender_socket)
+        await self._broadcast(payload, room_code, exclude=sender_socket)
