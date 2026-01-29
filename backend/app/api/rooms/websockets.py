@@ -138,7 +138,7 @@ class ConnectionManager:
         await self._broadcast(payload, room_code)
 
     
-    async def broadcast_typing(self, username: str, room_code: str, sender_socket: WebSocket):
+    async def broadcast_typing(self, room_code: str, username: str, sender_socket: WebSocket):
         """Typing indicator"""
         payload = {
             'type': 'typing',
