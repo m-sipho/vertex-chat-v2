@@ -1,3 +1,5 @@
-from .service import Room_Manager
+from .service import RoomManager
+from .websockets import ConnectionManager
 
-global_manager = Room_Manager()
+global_manager = RoomManager()
+global_connection_manager = ConnectionManager()
