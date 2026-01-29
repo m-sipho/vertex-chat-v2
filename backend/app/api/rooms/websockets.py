@@ -55,7 +55,7 @@ class ConnectionManager:
                     del self._active_connections[room_code]
             
         try:
-            websocket.close()
+            await websocket.close()
         except Exception:
             print("Most likely the socket was already closed")
             pass # Most likely the socket was already closed
