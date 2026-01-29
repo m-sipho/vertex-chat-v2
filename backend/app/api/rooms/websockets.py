@@ -1,6 +1,18 @@
 from fastapi import WebSocket
 from typing import Dict, List
 import asyncio
+import logging
+
+# Configure logging
+logger = logging.getLogger("vertex")
+logger.setLevel(logging.INFO)
+
+handler = logging.StreamHandler()
+handler.setLevel(logging.INFO)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+
+logger.addHandler(handler)
 
 class ConnectionManager:
     def __init__(self):
@@ -36,8 +48,10 @@ class ConnectionManager:
             if room_code not in self._active_connections:
                 self._active_connections[room_code] = []
             
-            print(f"client {websocket.client.host}:{websocket.client.port}")
             self._active_connections[room_code].append(websocket)
+        
+        client_info = f"client {websocket.client.host}:{websocket.client.port}" if websocket.client else 'unknown'
+        logger.info(f"Client {client_info} connected to Room {room_code} | Total: {len(self._active_connections[room_code])}")
 
 
     async def disconnect(self, websocket: WebSocket, room_code: str):
@@ -49,15 +63,16 @@ class ConnectionManager:
                 # Attempt to remove the specific websocket from the list
                 if websocket in self._active_connections[room_code]:
                     self._active_connections[room_code].remove(websocket)
+                    logger.info(f"Socket disconnected from Room: {room_code}")
 
                 # Garbage collection: If the room has no sockets
                 if not self._active_connections[room_code]:
                     del self._active_connections[room_code]
+                    logger.info(f"Room: {room_code} empty. Key cleared")
             
         try:
             await websocket.close()
         except Exception:
-            print("Most likely the socket was already closed")
             pass # Most likely the socket was already closed
         
     
@@ -66,7 +81,7 @@ class ConnectionManager:
         try:
             await websocket.send_json(message)
         except Exception:
-            print("Attempted to send a personal message to a closed socket")
+            logger.warning("Attempted to send a personal message to a closed socket")
     
 
     async def _broadcast(self, message: dict, room_code: str, exclude: WebSocket = None):
@@ -87,7 +102,7 @@ class ConnectionManager:
             try:
                 await connection.send_json(message)
             except Exception as e:
-                print(f"Error broadcasting to socket {e}")
+                logger.warning(f"Dead socket in {room_code}. Removing... {e}")
                 # Remove the broken socket
                 await self.disconnect(connection, room_code)
     
