@@ -114,7 +114,7 @@ class ConnectionManager:
             tasks.append(self._safe_send(connection, message, room_code))
 
         # Broadcast the message to every user in a room without having to wait for another, and in the background
-        asyncio.create_task(asyncio.gather(*tasks))
+        asyncio.create_task(asyncio.gather(*tasks, return_exceptions=True))
     
     
     async def broadcast_chat_message(self, room_code: str, username: str, text: str, timestamp: str):
