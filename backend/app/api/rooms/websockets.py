@@ -83,6 +83,16 @@ class ConnectionManager:
         except Exception:
             logger.warning("Attempted to send a personal message to a closed socket")
     
+    
+    async def _safe_send(self, connection: WebSocket, message: dict, room_code: str):
+        """Safely send a message with a strict timeout"""
+        try:
+            await asyncio.wait_for(connection.send_json(message), timeout=10)
+        except asyncio.TimeoutError as e:
+            logger.warning(f"Dead socket in {room_code}. Removing... {e}")
+            # Remove the broken socket
+            await self.disconnect(connection, room_code)
+    
 
     async def _broadcast(self, message: dict, room_code: str, exclude: WebSocket = None):
         """Take a message and send it to everyone in the room"""
@@ -93,18 +103,18 @@ class ConnectionManager:
             if room_code in self._active_connections:
                 connections_copy = list(self._active_connections[room_code])
 
-        # Iterate through every connection in a specifi room
+        tasks = []
+        # Iterate through every connection in a specific room
         for connection in connections_copy:
             # Skip the sender if provided
             if exclude == connection:
                 continue
+            
+            # Keep a list of coroutines
+            tasks.append(self._safe_send(connection, message, room_code))
 
-            try:
-                await connection.send_json(message)
-            except Exception as e:
-                logger.warning(f"Dead socket in {room_code}. Removing... {e}")
-                # Remove the broken socket
-                await self.disconnect(connection, room_code)
+        # Broadcast the message to every user in a room without having to wait for another, and in the background
+        asyncio.create_task(asyncio.gather(*tasks))
     
     
     async def broadcast_chat_message(self, room_code: str, username: str, text: str, timestamp: str):
