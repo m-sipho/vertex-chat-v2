@@ -83,12 +83,12 @@ class ConnectionManager:
         except Exception:
             logger.warning("Attempted to send a personal message to a closed socket")
     
-    
+
     async def _safe_send(self, connection: WebSocket, message: dict, room_code: str):
         """Safely send a message with a strict timeout"""
         try:
             await asyncio.wait_for(connection.send_json(message), timeout=10)
-        except asyncio.TimeoutError as e:
+        except Exception as e:
             logger.warning(f"Dead socket in {room_code}. Removing... {e}")
             # Remove the broken socket
             await self.disconnect(connection, room_code)
