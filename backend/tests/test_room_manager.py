@@ -1,11 +1,11 @@
 import pytest
 from fastapi import HTTPException
-from app.api.rooms.dependencies import Room_Manager
+from app.api.rooms.dependencies import RoomManager
 from app.api.auth.schemas import User
 
 @pytest.fixture
 def manager():
-    return Room_Manager()
+    return RoomManager()
 
 @pytest.fixture
 def host():

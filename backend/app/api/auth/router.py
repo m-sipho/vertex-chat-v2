@@ -16,7 +16,7 @@ router = APIRouter(
 # def login(user_details: LoginUser) -> Token:
 #     user_id = str(uuid.uuid4())
 
-#     token_data = {"sub": user_details.username, "uid": user_id}
+#     token_data = {"sub": user_details.username, "id": user_id}
 
 #     access_token_time = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 #     access_token = create_access_token(data=token_data, expires_delta=access_token_time)
@@ -28,7 +28,7 @@ router = APIRouter(
 def login(user_details: Annotated[OAuth2PasswordRequestForm, Depends()]):
     user_id = str(uuid.uuid4())
 
-    token_data = {"sub": user_details.username, "uid": user_id}
+    token_data = {"sub": user_details.username, "id": user_id}
 
     access_token_time = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data=token_data, expires_delta=access_token_time)
