@@ -17,7 +17,7 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
         username = payload.get("sub")
-        uid = payload.get("uid")
+        uid = payload.get("id")
 
         if username is None or uid is None:
             raise credentials_exception
