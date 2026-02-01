@@ -59,10 +59,35 @@ class RoomManager:
                     'active_users': {
                         host.id: host 
                     },
-                    'pending_users': {}
+                    'pending_users': {},
+                    'message_history': []
                 }
                 return {"status": "success", "room_code": code, "message": "Room created successfully."}
         raise NoAvailableRoomError("No available rooms")
+    
+    async def add_message_to_history(self, room_code: str, username: str, text: str, type: str, timestamp: str = None):
+        """Save messages in memory"""
+        if timestamp != None:
+            message_data = {
+                'type': type,
+                'user': username,
+                'message': text,
+                'timestamp': timestamp
+            }
+        else:
+            message_data = {
+                'type': type,
+                'message': text
+            }
+        
+        # Append to the end of the list
+        self._active_rooms[room_code]['message_history'].append(message_data)
+
+    async def get_message_history(self, room_code: str):
+        """Get all saved messages from a specific room"""
+        if room_code in self._active_rooms:
+            return self._active_rooms[room_code]['message_history']
+        return []
 
 
     async def request_to_join_room(self, user: User, room_code):
