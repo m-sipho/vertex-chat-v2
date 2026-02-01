@@ -76,7 +76,7 @@ class ConnectionManager:
             pass # Most likely the socket was already closed
         
     
-    async def send_personal_message(self, message: dict, websocket: WebSocket):
+    async def send_personal_message(self, message: list, websocket: WebSocket):
         """Send a message to a specific user"""
         try:
             await websocket.send_json(message)
