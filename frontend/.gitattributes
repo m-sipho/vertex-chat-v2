@@ -1,0 +1,5 @@
+package-lock.json linguist-vendored
+package.json linguist-vendored
+eslint.config.js linguist-vendored
+
+node_modules/* linguist-vendored
