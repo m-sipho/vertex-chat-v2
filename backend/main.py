@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.api.rooms.router import router as rooms_router
 from app.api.auth.router import router as auth_router
@@ -13,6 +14,18 @@ from app.core.exceptions import (
 
 
 app = FastAPI(title="Vertex Backend")
+
+origins = [
+    "http://localhost:5173",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.exception_handler(NoAvailableRoomError)
 async def server_full_handler(request: Request, exc: NoAvailableRoomError):
