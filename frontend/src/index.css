@@ -4,3 +4,8 @@
     --primary-color: #4f46e5;
     --primary-hover: #4338ca;
 }
+
+html {
+    background-color: #09090b;
+    overscroll-behavior: none;
+}
