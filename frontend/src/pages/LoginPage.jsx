@@ -48,7 +48,7 @@ function LoginPage() {
             const data = await loginUser(username)
             if (data.access_token) {
                 sessionStorage.setItem("token", data.access_token);
-                navigate("/dashboard")
+                navigate(`/dashboard?username=${username}`)
             } else {
                 setError(data.detail || "Invalid credentials");
             }
