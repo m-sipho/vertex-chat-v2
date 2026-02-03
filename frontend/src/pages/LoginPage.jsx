@@ -7,6 +7,7 @@ import { Loader } from "lucide-react"
 function LoginPage() {
     const [username, setUsername] = useState("");
     const [loading, setLoading] = useState(false)
+    const [showLoadingMsg, setShowLoadingMsg] = useState(false)
     const [error, setError] = useState("")
     const navigate = useNavigate()
 
@@ -21,6 +22,22 @@ function LoginPage() {
         }
     }, [error])
 
+    // Trigger slow connection message
+    useEffect(() => {
+        let timer;
+        if (loading) {
+            // Wait 2 seconds before showing the message
+            timer = setTimeout(() => {
+                setShowLoadingMsg(true)
+            }, 4000)
+        } else {
+            // Reset when loading finishes
+            setShowLoadingMsg(false)
+        }
+
+        return () => clearTimeout(timer);
+    }, [loading])
+
     async function handleSubmit(e) {
         e.preventDefault();
 
@@ -29,7 +46,12 @@ function LoginPage() {
 
         try {
             const data = await loginUser(username)
-            console.log(data)
+            if (data.access_token) {
+                sessionStorage.setItem("token", data.access_token);
+                navigate("/dashboard")
+            } else {
+                setError(data.detail || "Invalid credentials");
+            }
         } catch (err) {
             setError(err.message || "Sign up failed")
         } finally {
@@ -40,8 +62,14 @@ function LoginPage() {
 
 
     return (
-        <div className="h-screen flex items-center justify-center bg-zinc-950 p-4">
-            <div className="bg-zinc-900 w-sm md:w-lg h-auto rounded-md border border-zinc-800 p-6">
+        <div className="h-screen flex flex-col items-center justify-center bg-zinc-950 p-6">
+            
+            <div className={`text-center ${showLoadingMsg ? 'animate-pulse opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
+                <p className="text-yellow-500/90 text-xs font-medium">Using free tier services.</p>
+                <p className="text-zinc-500 text-[10px] mb-3">Waking up server, please be patient...</p>
+            </div>
+
+            <div className="bg-zinc-900 md:w-lg h-auto rounded-md border border-zinc-800 p-6">
                 {/* Logo and Header */}
                 <div className="flex flex-col items-center mb-8">
                     <div className="w-16 h-16 rounded-md flex items-center justify-center">
@@ -59,12 +87,12 @@ function LoginPage() {
 
                     {/* Error Messages */}
                     {error && (
-                        <div className="text-red-400 text-xs text-center bg-red-500/10 border border-red-500/20 p-2 rounded">
+                        <div className="text-red-400 text-xs text-center bg-red-500/10 border border-red-500/20 p-2 rounded transition">
                             {error}
                         </div>
                     )}
 
-                    <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-md transition ">
+                    <button type="submit" className={`w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-md transition ${loading ? 'opacity-25': ''}`}>
                         {loading ? (
                             <div className="flex justify-center items-center">
                                 <Loader className="animate-spin text-center" />
