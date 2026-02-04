@@ -2,8 +2,8 @@ from pydantic import BaseModel
 import uuid
 
 
-class User(BaseModel):
-    username: str
+class UserData(BaseModel):
+    display_name: str | None = None
     id: uuid.UUID
 
 class Token(BaseModel):
