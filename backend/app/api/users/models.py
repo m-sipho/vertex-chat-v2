@@ -11,14 +11,13 @@ class User(Base):
     __tablename__ = "users"
 
     id : Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name : Mapped[str] = mapped_column(unique=True, index=True, nullable=False)
+    username : Mapped[str] = mapped_column(unique=True, index=True, nullable=False)
     password : Mapped[str] = mapped_column(nullable=False)
-    display_name : Mapped[str] = mapped_column(nullable=False)
-    avatar_seed : Mapped[str] = mapped_column(nullable=False)
-    status_message : Mapped[str | None] = mapped_column(String(100), nullable=True)
+    display_name : Mapped[str] = mapped_column(nullable=True)
+    avatar_seed : Mapped[str] = mapped_column(default=lambda: str(uuid.uuid4()), nullable=False)
     is_banned : Mapped[bool] = mapped_column(default=False, nullable=False)
     reputation_score : Mapped[int] = mapped_column(default=100, nullable=False)
     created_at : Mapped[datetime] = mapped_column( DateTime(timezone=True), nullable=False, server_default=func.now())
 
     def __repr__(self):
-        return f"<User {self.name} at {self.created_at}>"
+        return f"<User {self.username} at {self.created_at}>"
