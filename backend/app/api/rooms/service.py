@@ -1,7 +1,7 @@
 import string
 import secrets
 from fastapi import HTTPException, status
-from app.api.auth.schemas import User
+from app.api.auth.schemas import UserData
 from app.core.exceptions import (
     NoAvailableRoomError,
     UserAlreadyInRoomError,
@@ -19,6 +19,7 @@ class RoomManager:
         # {
         #     'ROOM_CODE': {
         #         'host_id': 'user_123',
+        #         'title': 'Chess Club'
         #         'active_users': {
         #             'user_123': <User Object Mthokozisi>,
         #             'user_740': <User Object Mthokozisi>
@@ -40,8 +41,14 @@ class RoomManager:
         password = ''.join(secrets.choice(alphabet) for _ in range(length))
         return password
 
-    async def create_room(self, host: User):
+    async def create_room(self, host: UserData):
         '''Logic to save the room and the host'''
+        if not host.display_name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You must set a display name before creating a room."
+            )
+
         # Check if the user is a host in another room
         for _, room_details in list(self._active_rooms.items()):
             if room_details['host_id'] == host.id:
@@ -90,7 +97,7 @@ class RoomManager:
         return []
 
 
-    async def request_to_join_room(self, user: User, room_code):
+    async def request_to_join_room(self, user: UserData, room_code):
         '''Logic to add a user to an existing room'''
 
         count = 0
