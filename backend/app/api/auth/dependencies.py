@@ -1,27 +1,24 @@
 from fastapi import Depends, HTTPException, status
 from typing import Annotated
-from .service import oauth2_scheme
-import jwt
-from jwt.exceptions import InvalidTokenError
-from app.core.config import SECRET_KEY, ALGORITHM
-from .schemas import User
+from .service import oauth2_scheme, verify_token
+from app.api.users.models import User
+from app.core.database import get_db
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
-def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: AsyncSession = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    token_data = verify_token(token, credentials_exception)
+    query = select(User).where(User.username == token_data.username)
+    result = await db.execute(query)
+    user = result.scalars().first()
 
-        username = payload.get("sub")
-        uid = payload.get("id")
-
-        if username is None or uid is None:
-            raise credentials_exception
-        
-        return User(username=username, id=uid)
-    except InvalidTokenError:
+    if user is None:
         raise credentials_exception
+    
+    return user
