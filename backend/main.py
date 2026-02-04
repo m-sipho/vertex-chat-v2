@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.api.rooms.router import router as rooms_router
 from app.api.auth.router import router as auth_router
+from app.api.users.router import router as users_router
 from app.core.exceptions import (
     NoAvailableRoomError,
     UserAlreadyInRoomError,
@@ -11,9 +12,20 @@ from app.core.exceptions import (
     UserNotFoundError,
     RoomNotFoundError
 )
+from contextlib import asynccontextmanager
+from app.core.database import Base, engine
+from app.api.users.models import User
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+
+    await engine.dispose()
 
 
-app = FastAPI(title="Vertex Backend")
+app = FastAPI(title="Vertex Backend", lifespan=lifespan)
 
 origins = [
     "http://localhost:5173",
@@ -70,6 +82,7 @@ async def room_not_found_handler(request: Request, exc: RoomNotFoundError):
     )
 
 app.include_router(auth_router)
+app.include_router(users_router)
 app.include_router(rooms_router)
 
 @app.get("/")
