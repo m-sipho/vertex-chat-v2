@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { loginUser } from "../services/api";
 import { Loader } from "lucide-react"
 
 
 function LoginPage() {
     const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("")
     const [loading, setLoading] = useState(false)
     const [showLoadingMsg, setShowLoadingMsg] = useState(false)
     const [error, setError] = useState("")
@@ -45,18 +46,21 @@ function LoginPage() {
         setError("");
 
         try {
-            const data = await loginUser(username)
+            const data = await loginUser(username, password)
             if (data.access_token) {
                 sessionStorage.setItem("token", data.access_token);
-                navigate(`/dashboard?username=${username}`)
+                sessionStorage.setItem("display_name", data.display_name);
+                sessionStorage.setItem("avatar_seed", data.avatar_seed);
+                navigate(`/dashboard`)
             } else {
                 setError(data.detail || "Invalid credentials");
             }
         } catch (err) {
-            setError(err.message || "Sign up failed")
+            setError(err.message || "Login failed");
         } finally {
             setLoading(false);
             setUsername("");
+            setPassword("");
         }
     }
 
@@ -81,8 +85,13 @@ function LoginPage() {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
-                        <label htmlFor="username" className="block text-xs font-medium text-zinc-500 uppercase mb-1.5 ml-1">Username</label>
+                        <label htmlFor="username" className="block text-xs font-medium text-zinc-500 mb-1.5 ml-1">USERNAME</label>
                         <input type="text" id="username" disabled={loading} value={username} onChange={e => setUsername(e.target.value)} className="w-full bg-black/20 border border-zinc-800 rounded-md px-4 py-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition placeholder-zinc-600 font-medium" placeholder="e.g. m_sipho" required autoFocus autoComplete="off" />
+                    </div>
+
+                    <div>
+                        <label htmlFor="password" className="block text-xs font-medium text-zinc-500 mb-1.5 ml-1">PASSWORD</label>
+                        <input type="password" id="password" disabled={loading} value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-black/20 border border-zinc-800 rounded-md px-4 py-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition placeholder-zinc-600 font-medium" placeholder="••••••••" required autoComplete="off" />
                     </div>
 
                     {/* Error Messages */}
@@ -102,6 +111,11 @@ function LoginPage() {
                         )}
                     </button>
                 </form>
+            </div>
+
+            <div className="md:w-lg bg-zinc-950 p-1 text-center">
+                <span className="text-xs text-zinc-500">New to the network?</span>
+                <Link to="/register" className={`text-indigo-500 hover:text-indigo-400 ml-1 font-medium text-xs focus:outline-none ${loading ? 'disabled': ''}`}>Create</Link>
             </div>
 
             {/* Copyright footer */}

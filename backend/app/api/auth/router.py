@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, status
-from .schemas import Token
+from .schemas import LoginResponse
 from .service import create_access_token
 from app.core.config import ACCESS_TOKEN_EXPIRE_MINUTES
 from datetime import timedelta
@@ -17,8 +17,8 @@ router = APIRouter(
 )
 
 
-@router.post("/login")
-async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: AsyncSession = Depends(get_db)) -> Token:
+@router.post("/login", response_model=LoginResponse)
+async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: AsyncSession = Depends(get_db)):
     query = select(User).where(User.username == form_data.username)
     result = await db.execute(query)
     user = result.scalars().first()
@@ -40,4 +40,9 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: 
     access_token_time = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_time)
 
-    return Token(access_token=access_token, access_type="bearer")
+    return {
+        "access_token": access_token,
+        "access_type": "bearer",
+        "display_name": user.display_name,
+        "avatar_seed": user.avatar_seed
+    }
