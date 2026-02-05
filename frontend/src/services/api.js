@@ -47,3 +47,12 @@ export async function loginUser(username, password) {
         body: formData.toString()
     });
 }
+
+export async function registerUser(username, password, display_name = null) {
+    return apiClient("/register", () => null, {
+        method: "POST",
+        body: JSON.stringify({
+            username, password, display_name
+        })
+    })
+}
