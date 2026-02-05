@@ -199,7 +199,7 @@ class RoomManager:
         user_to_reject = None
         
         for user_info in room['pending_users'].values():
-            if clean_target_username == user_info.username.strip().lower():
+            if clean_target_username == user_info.display_name.strip().lower():
                 user_to_reject = user_info
                 break
         
