@@ -47,6 +47,7 @@ class RoomManager:
         password = ''.join(secrets.choice(alphabet) for _ in range(length))
         return password
 
+
     async def create_room(self, title: str, host: UserData):
         '''Logic to save the room and the host'''
         if not host.display_name:
@@ -79,6 +80,7 @@ class RoomManager:
                 return {"status": "success", "room_code": code, "message": "Room created successfully."}
         raise NoAvailableRoomError("No available rooms")
     
+
     async def add_message_to_history(self, room_code: str, username: str, text: str, type: str, timestamp: str = None):
         """Save messages in memory"""
         if timestamp != None:
@@ -96,6 +98,7 @@ class RoomManager:
         
         # Append to the end of the list
         self._active_rooms[room_code]['message_history'].append(message_data)
+
 
     async def get_message_history(self, room_code: str):
         """Get all saved messages from a specific room"""
@@ -154,6 +157,7 @@ class RoomManager:
         room['pending_users'][user.id] = user
         return {"status": "pending", "message": "Waiting for host approval"}
     
+
     async def approve_user(self, host_id, room_code, target_username):
         '''Logic to approve a pending user'''
         if room_code not in self._active_rooms:
@@ -168,7 +172,7 @@ class RoomManager:
         user_to_approve = None
         
         for user_info in room['pending_users'].values():
-            if clean_target_username == user_info.username.strip().lower():
+            if clean_target_username == user_info.display_name.strip().lower():
                 user_to_approve = user_info
                 break
         
@@ -178,8 +182,9 @@ class RoomManager:
 
         room['active_users'][user_to_approve.id] = user_to_approve
         del room['pending_users'][user_to_approve.id]
-        return {"status": "approved", "message": f"'{user_to_approve.username}' joined the room"}
+        return {"status": "approved", "message": f"'{user_to_approve.display_name}' joined the room"}
     
+
     async def reject_user(self, host_id, room_code, target_username):
         '''Logic to reject a pending user'''
         if room_code not in self._active_rooms:
@@ -204,6 +209,7 @@ class RoomManager:
         del room['pending_users'][user_to_reject.id]
         return {"status": "removed", "message": f"'{target_username}' is rejected to join"}
     
+
     async def leave_room(self, user_id, room_code, new_host_id: str = None):
         '''Logic for garbage collection'''
         # Check if the room exists
@@ -274,11 +280,13 @@ class RoomManager:
         
         return {'status': 'left', 'message': f"{username} left successfully"}
 
+
     async def get_room_state(self, room_code):
         if room_code not in self._active_rooms:
             raise RoomNotFoundError(f"Room '{room_code}' doesn't exist.")
         
         return self._active_rooms[room_code]
     
+
     async def get_all_rooms_info(self):
         return self._active_rooms
