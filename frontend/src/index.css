@@ -14,3 +14,27 @@ html {
     opacity: .5;
     pointer-events: none;
 }
+
+.fade-in { 
+    animation: fadeIn 0.3s ease-out;
+}
+
+.progress-bar {
+    width: 0%;
+    transition: width 3s linear;
+}
+
+.fill-progress {
+    width: 100%;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
