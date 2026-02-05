@@ -34,11 +34,16 @@ export async function apiClient(endpoint, getToken, options = {}) {
     return response.json()
 }
 
-export async function loginUser(username) {
+export async function loginUser(username, password) {
+    const formData = new URLSearchParams();
+    formData.append("username", username);
+    formData.append("password", password);
+
     return apiClient("/auth/login", () => null, {
         method: "POST",
-        body: JSON.stringify({
-            username
-        })
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: formData.toString()
     });
 }
