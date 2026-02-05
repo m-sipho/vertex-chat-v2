@@ -224,7 +224,7 @@ class RoomManager:
             raise UserNotFoundError(f"You are not in room {room_code}")
         
         user_obj = active_users[user_id]
-        username = user_obj.username
+        username = user_obj.display_name
 
         # If the person leaving is the host
         if user_id == room['host_id']:
@@ -251,7 +251,7 @@ class RoomManager:
                 
                 # Transfer the crown
                 room["host_id"] = new_host_id
-                new_host_username = active_users[new_host_id].username
+                new_host_username = active_users[new_host_id].display_name
 
                 # Remove the old host
                 del active_users[user_id]

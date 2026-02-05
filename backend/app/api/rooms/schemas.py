@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
+import uuid
 
 class CreateRequest(BaseModel):
     host_username: str
@@ -13,4 +14,4 @@ class ApproveRequest(BaseModel):
 
 class LeaveRequest(BaseModel):
     room_code: str
-    new_host_id: Optional[str] = None
+    new_host_id: Optional[uuid.UUID] = None
