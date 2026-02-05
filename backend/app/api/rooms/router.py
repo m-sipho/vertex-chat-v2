@@ -18,8 +18,8 @@ router = APIRouter(
 )
 
 @router.post("/create-room", status_code=status.HTTP_201_CREATED)
-async def create_room(current_user: Annotated[UserData, Depends(get_current_user)]):
-    results = await global_manager.create_room(UserData(display_name=current_user.display_name, id=current_user.id))
+async def create_room(title: str, current_user: Annotated[UserData, Depends(get_current_user)]):
+    results = await global_manager.create_room(title, UserData(display_name=current_user.display_name, id=current_user.id))
     return results
 
 @router.post("/join-room", status_code=status.HTTP_202_ACCEPTED)

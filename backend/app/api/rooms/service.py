@@ -41,7 +41,7 @@ class RoomManager:
         password = ''.join(secrets.choice(alphabet) for _ in range(length))
         return password
 
-    async def create_room(self, host: UserData):
+    async def create_room(self, title: str, host: UserData):
         '''Logic to save the room and the host'''
         if not host.display_name:
             raise HTTPException(
@@ -63,6 +63,7 @@ class RoomManager:
             if code not in self._active_rooms:
                 self._active_rooms[code] = {
                     'host_id': host.id,
+                    'title': title,
                     'active_users': {
                         host.id: host 
                     },
