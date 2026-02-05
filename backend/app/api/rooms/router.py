@@ -3,7 +3,7 @@ from typing import Annotated
 from app.api.rooms.dependencies import global_manager
 from .schemas import CreateRequest, JoinLeaveRequest, ApproveRequest, LeaveRequest
 from app.api.auth.dependencies import get_current_user
-from app.api.auth.schemas import LoginUser, User
+from app.api.auth.schemas import UserData
 from .dependencies import global_connection_manager as ws_manager
 from datetime import datetime, timezone
 import jwt
@@ -11,6 +11,10 @@ from jwt.exceptions import InvalidTokenError
 from app.core.config import SECRET_KEY, ALGORITHM
 import json
 from .websockets import logger
+from sqlalchemy import select
+from app.api.users.models import User
+from app.core.database import get_db
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(
     prefix="",
@@ -18,55 +22,67 @@ router = APIRouter(
 )
 
 @router.post("/create-room", status_code=status.HTTP_201_CREATED)
-async def create_room(current_user: Annotated[User, Depends(get_current_user)]):
-    results = await global_manager.create_room(User(username=current_user.username, id=current_user.id))
+async def create_room(title: str, current_user: Annotated[UserData, Depends(get_current_user)]):
+    results = await global_manager.create_room(title, UserData(display_name=current_user.display_name, id=current_user.id))
     return results
 
 @router.post("/join-room", status_code=status.HTTP_202_ACCEPTED)
-async def join(request: JoinLeaveRequest, current_user: Annotated[User, Depends(get_current_user)]):
-    results = await global_manager.request_to_join_room(User(username=current_user.username, id=current_user.id), request.room_code)
+async def join(request: JoinLeaveRequest, current_user: Annotated[UserData, Depends(get_current_user)]):
+    results = await global_manager.request_to_join_room(UserData(display_name=current_user.display_name, id=current_user.id), request.room_code)
     return results
 
 @router.post("/approve", status_code=status.HTTP_200_OK)
-async def approve(request: ApproveRequest, current_user: Annotated[User, Depends(get_current_user)]):
+async def approve(request: ApproveRequest, current_user: Annotated[UserData, Depends(get_current_user)]):
     status = await global_manager.approve_user(current_user.id, request.room_code, request.target_username)
     return status
 
 @router.post("/reject", status_code=status.HTTP_200_OK)
-async def reject(request: ApproveRequest, current_user: Annotated[User, Depends(get_current_user)]):
+async def reject(request: ApproveRequest, current_user: Annotated[UserData, Depends(get_current_user)]):
     status = await global_manager.reject_user(current_user.id, request.room_code, request.target_username)
     return status
 
 @router.post("/leave-room", status_code=status.HTTP_200_OK)
-async def leave_room(request: LeaveRequest, current_user: Annotated[User, Depends(get_current_user)]):
+async def leave_room(request: LeaveRequest, current_user: Annotated[UserData, Depends(get_current_user)]):
     status = await global_manager.leave_room(current_user.id, request.room_code, request.new_host_id)
     return status
 
 @router.get("/room/{room_code}")
-async def get_room(room_code: str, current_user: Annotated[LoginUser, Depends(get_current_user)]):
+async def get_room(room_code: str, current_user: Annotated[UserData, Depends(get_current_user)]):
     result = await global_manager.get_room_state(room_code)
     return result
 
 @router.get("/rooms/all")
-async def get_all_rooms(current_user: Annotated[LoginUser, Depends(get_current_user)]):
+async def get_all_rooms(current_user: Annotated[UserData, Depends(get_current_user)]):
     result = await global_manager.get_all_rooms_info()
     return result
 
 @router.websocket("/ws/{room_code}")
-async def websocket_endpoint(websocket: WebSocket, room_code: str, token: str = Query(...)):
+async def websocket_endpoint(websocket: WebSocket, room_code: str, db: AsyncSession = Depends(get_db), token: str = Query(...)):
 
     try:
         # Decode the token
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get('sub')
-        id = payload.get('id')
+        
+        # Query the database for the user
+        query = select(User).where(User.username == username)
+        result = await db.execute(query)
+        user_result = result.scalars().first()
+
+        if not user_result:
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+            return
+
+        display_name = user_result.display_name
+        user_id = user_result.id
+
 
         # Check the token is valid
-        if username is None or id is None:
+        if username is None or user_id is None:
             await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
             return
         
-        user = User(username=username, id=id)
+        user = UserData(display_name=display_name, id=user_id)
     except InvalidTokenError:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
@@ -92,11 +108,11 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str, token: str = 
         logger.error(f"Error syncing history: {e}")
 
     # Broadcast online presence
-    await ws_manager.broadcast_presence(room_code, user.username, 'online')
+    await ws_manager.broadcast_presence(room_code, user.display_name, 'online')
 
-    join_msg = f"{user.username} joined the room"
+    join_msg = f"{user.display_name} joined the room"
     await ws_manager.broadcast_system_message(room_code, join_msg)
-    await global_manager.add_message_to_history(room_code, user.username, join_msg, "system")
+    await global_manager.add_message_to_history(room_code, user.display_name, join_msg, "system")
 
     try:
         while True:
@@ -105,12 +121,12 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str, token: str = 
             try:
                 event = json.loads(data)
             except json.JSONDecodeError:
-                logger.warning(f"Wrong JSON format received from {user.username}: {data}")
+                logger.warning(f"Wrong JSON format received from {user.display_name}: {data}")
                 continue
 
             event_type = event.get("type")
             if not event_type:
-                logger.warning(f"Missing 'type' field in data from {user.username}")
+                logger.warning(f"Missing 'type' field in data from {user.display_name}")
                 continue
 
             try:
@@ -123,22 +139,22 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str, token: str = 
                     current_time = datetime.now(timezone.utc).isoformat()
 
                     # Broadcast message to the room
-                    await ws_manager.broadcast_chat_message(room_code, user.username, message, current_time)
+                    await ws_manager.broadcast_chat_message(room_code, user.display_name, message, current_time)
 
                     # Save the message in memeory
-                    await global_manager.add_message_to_history(room_code, user.username, message, "chat", current_time)
+                    await global_manager.add_message_to_history(room_code, user.display_name, message, "chat", current_time)
 
                 elif event_type == 'typing':
-                    ws_manager.broadcast_typing(room_code, user.username, websocket)
+                    ws_manager.broadcast_typing(room_code, user.display_name, websocket)
 
                 elif event_type == 'presence_update':
                     presence_status = event.get('status')
                     if not presence_status:
                         continue # Do not change the status
-                    await ws_manager.broadcast_presence(room_code, user.username, presence_status)
+                    await ws_manager.broadcast_presence(room_code, user.display_name, presence_status)
 
                 else:
-                    logger.error(f"Unknown event type '{event_type}' from {user.username}")
+                    logger.error(f"Unknown event type '{event_type}' from {user.display_name}")
                     await ws_manager.send_personal_message([
                     {
                         "type": "error",
@@ -156,10 +172,10 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str, token: str = 
                 ], websocket)
             
     except WebSocketDisconnect:
-        leave_msg = f"{user.username} left the room"
+        leave_msg = f"{user.display_name} left the room"
         await ws_manager.broadcast_system_message(room_code, leave_msg)
-        await ws_manager.broadcast_presence(room_code, user.username, 'online')
-        await global_manager.add_message_to_history(room_code, user.username, leave_msg, "system")
+        await ws_manager.broadcast_presence(room_code, user.display_name, 'offline')
+        await global_manager.add_message_to_history(room_code, user.display_name, leave_msg, "system")
 
         await ws_manager.disconnect(websocket, room_code)
     

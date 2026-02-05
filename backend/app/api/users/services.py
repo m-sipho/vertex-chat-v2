@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from .schemas import CreateUser
+from .schemas import CreateUser, UserID
 from sqlalchemy import select
 from app.api.users.models import User
 from app.api.auth.utils import Hash
@@ -29,3 +29,21 @@ async def create_user(user_data: CreateUser, db: AsyncSession):
     await db.commit()
     await db.refresh(new_user)
     return {"message": "User created successfully"}
+
+async def change_display_name(display_name: str, current_user: UserID, db: AsyncSession):
+    query = select(User).where(User.id == current_user.id)
+    result = await db.execute(query)
+
+    existing_user = result.scalars().first()
+
+    if not existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Not authorized to alter display name"
+        )
+    
+    existing_user.display_name = display_name
+    db.add(existing_user)
+    await db.commit()
+    await db.refresh(existing_user)
+    return {"message": "Display name updated successfully"}
