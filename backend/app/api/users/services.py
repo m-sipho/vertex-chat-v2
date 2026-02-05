@@ -18,6 +18,13 @@ async def create_user(user_data: CreateUser, db: AsyncSession):
             detail="Username already taken"
         )
     
+    # Check if the password has at least 8 characters
+    if len(user_data.password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password needs 8+ characters"
+        )
+    
     new_user = User(
         username=user_data.username,
         password=Hash.get_password_hashed(user_data.password),
