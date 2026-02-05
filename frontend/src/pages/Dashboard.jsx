@@ -1,6 +1,16 @@
 import { UserRound, Plus, Hash, LogOut, MessageCircleMore } from "lucide-react"
+import { useState, useEffect } from "react"
 
 function Dashboard() {
+    const [seed, setSeed] = useState("")
+    const [displayName, setDisplayName] = useState("")
+
+    useEffect(() => {
+        setDisplayName(sessionStorage.getItem("display_name"))
+
+        setSeed(sessionStorage.getItem("avatar_seed"))
+    }, [])
+
     return (
         <div className="h-screen bg-zinc-950 flex">
             {/* Sidebar */}
@@ -15,8 +25,8 @@ function Dashboard() {
 
                     {/* User profile */}
                     <div className="group cursor-pointer">
-                        <div className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center text-xs border border-zinc-600 hover:border-zinc-500 transition">
-                            <UserRound className="text-zinc-400" />
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center border border-zinc-600 hover:border-zinc-500 transition" title={displayName}>
+                            <img src={`https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${seed}&radius=50`} alt="avatar"/>
                         </div>
                     </div>
                 </div>

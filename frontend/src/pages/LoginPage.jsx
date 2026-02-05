@@ -49,6 +49,8 @@ function LoginPage() {
             const data = await loginUser(username, password)
             if (data.access_token) {
                 sessionStorage.setItem("token", data.access_token);
+                sessionStorage.setItem("display_name", data.display_name);
+                sessionStorage.setItem("avatar_seed", data.avatar_seed);
                 navigate(`/dashboard`)
             } else {
                 setError(data.detail || "Invalid credentials");
