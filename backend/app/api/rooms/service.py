@@ -10,6 +10,8 @@ from app.core.exceptions import (
     UserNotFoundError,
     RoomNotFoundError
 )
+from typing import Optional
+import uuid
 
 class RoomManager:
     def __init__(self):
@@ -210,7 +212,7 @@ class RoomManager:
         return {"status": "removed", "message": f"'{target_username}' is rejected to join"}
     
 
-    async def leave_room(self, user_id, room_code, new_host_id: str = None):
+    async def leave_room(self, user_id, room_code, new_host_id: Optional[uuid.UUID] = None):
         '''Logic for garbage collection'''
         # Check if the room exists
         if room_code not in self._active_rooms:
