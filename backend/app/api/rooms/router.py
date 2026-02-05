@@ -24,7 +24,7 @@ async def create_room(title: str, current_user: Annotated[UserData, Depends(get_
 
 @router.post("/join-room", status_code=status.HTTP_202_ACCEPTED)
 async def join(request: JoinLeaveRequest, current_user: Annotated[UserData, Depends(get_current_user)]):
-    results = await global_manager.request_to_join_room(UserData(username=current_user.username, id=current_user.id), request.room_code)
+    results = await global_manager.request_to_join_room(UserData(display_name=current_user.display_name, id=current_user.id), request.room_code)
     return results
 
 @router.post("/approve", status_code=status.HTTP_200_OK)

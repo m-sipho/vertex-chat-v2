@@ -26,7 +26,13 @@ class RoomManager:
         #         },
         #         'pending_users': {
         #             'user_675': <User Object Sipho>
-        #         }
+        #         },
+        #         'message_history': [
+        #             {
+        #                 'type': system,
+        #                 'message': 'host joined the room'
+        #             }
+        #         ]
         #     }
         # }
         self._active_rooms = {}
@@ -101,6 +107,12 @@ class RoomManager:
     async def request_to_join_room(self, user: UserData, room_code):
         '''Logic to add a user to an existing room'''
 
+        if not user.display_name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You must set a display name before joining a room."
+            )
+
         count = 0
 
         # Ensure users can only be in two rooms simultaneously
@@ -126,17 +138,17 @@ class RoomManager:
             raise RoomNotFoundError(f"Room '{room_code}' does not exist.")
         
         room = self._active_rooms[room_code]
-        clean_username = user.username.strip().lower()
+        clean_username = user.display_name.strip().lower()
 
         # Ensure users with the same username are not in the same room
         for user_info in room['active_users'].values():
-            if clean_username == user_info.username.strip().lower():
-                raise UserAlreadyInRoomError(f"'{user.username}' already in room.")
+            if clean_username == user_info.display_name.strip().lower():
+                raise UserAlreadyInRoomError(f"'{user.display_name}' already in room.")
 
         # Ensure users with the same username are not in the same waiting list
         for user_info in room['pending_users'].values():
-            if clean_username == user_info.username.strip().lower():
-                raise UserAlreadyInAwaitingError(f"'{user.username}' already awaiting approval.")
+            if clean_username == user_info.display_name.strip().lower():
+                raise UserAlreadyInAwaitingError(f"'{user.display_name}' already awaiting approval.")
         
         # Put them in the waiting room
         room['pending_users'][user.id] = user
