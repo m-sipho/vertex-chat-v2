@@ -1,17 +1,41 @@
 import { UserRound, Plus, Hash, LogOut, MessageCircleMore } from "lucide-react"
 import { useState, useEffect } from "react"
 import NewSessionModal from "../modals/NewSessionModal"
+import { createRoom } from "../services/api"
 
 function Dashboard() {
     const [seed, setSeed] = useState("")
     const [displayName, setDisplayName] = useState("")
     const [isModalOpen, setModalOpen] = useState(false);
+    const [error, setError] = useState("");
 
     useEffect(() => {
         setDisplayName(sessionStorage.getItem("display_name"))
 
         setSeed(sessionStorage.getItem("avatar_seed"))
     }, [])
+
+    //Show error for 4 seconds
+    useEffect(() => {
+        if (error) {
+            const timer = setTimeout(() => {
+                setError(null)
+            }, 4000)
+
+            return () => clearTimeout(timer);
+        }
+    }, [error])
+
+    async function handleCreateRoom(formData) {
+        try {
+            const data = await createRoom(formData.title);
+        } catch (err) {
+            console.error(err)
+            setError(`${err}`)
+        } finally {
+
+        }
+    }
 
     return (
         <div>
@@ -64,6 +88,11 @@ function Dashboard() {
                 </div>
 
                 <div className="flex-1 flex items-center justify-center flex-col relative">
+                    {error && (
+                        <div className="fixed top-5 text-red-400 text-xs text-center bg-red-500/10 border border-red-500/20 p-2 rounded transition fade-out">
+                            {error}
+                        </div>
+                    )}
                     {/* Empty state */}
                     <div className="w-24 h-24 bg-zinc-900 rounded-full flex items-center justify-center mb-6 border border-zinc-800 shadow-inner">
                         <MessageCircleMore size={36} className="text-zinc-700" />
@@ -74,7 +103,7 @@ function Dashboard() {
             </div>
 
             {isModalOpen && (
-                <NewSessionModal onClose={() => (setModalOpen(false))} />
+                <NewSessionModal onCreateRoom={handleCreateRoom} onClose={() => (setModalOpen(false))} />
             )}
         </div>
     )
