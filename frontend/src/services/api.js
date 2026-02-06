@@ -48,7 +48,7 @@ export async function loginUser(username, password) {
     });
 }
 
-export async function registerUser(username, password, display_name = null) {
+export async function registerUser(username, password, display_name = undefined) {
     return apiClient("/register", () => null, {
         method: "POST",
         body: JSON.stringify({

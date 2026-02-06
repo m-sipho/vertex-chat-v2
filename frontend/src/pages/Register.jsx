@@ -7,11 +7,10 @@ function Register() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [displayName, setDisplayName] = useState("");
+    const [displayName, setDisplayName] = useState(undefined);
     const [loading, setLoading] = useState(false);
-    const [showLoadingMsg, setShowLoadingMsg] = useState(false)
     const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(true);
+    const [success, setSuccess] = useState(false);
     const [shouldFill, setShouldFill] = useState(false);
     const navigate = useNavigate();
 
@@ -26,6 +25,7 @@ function Register() {
         }
     }, [error])
 
+    // Fill the progess bar
     useEffect(() => {
         if (success) {
             // Allow repaint
@@ -33,6 +33,44 @@ function Register() {
             return () => clearTimeout(timer);
         }
     }, [success]);
+
+    // Check if passwords match
+    const passwordMatch = password === confirmPassword
+
+    async function handleSubmit(e) {
+        e.preventDefault();
+
+        if (!passwordMatch) {
+            setError("Passowords do not match");
+            setPassword("");
+            setConfirmPassword("");
+            return;
+        }
+
+        setLoading(true);
+        setError("");
+
+        try {
+            const data = await registerUser(username, confirmPassword, displayName);
+            if (data.message === "User created successfully") {
+                setSuccess(true);
+                
+                setTimeout(() => {
+                    navigate("/");
+                    setSuccess(false);
+                }, 3000)
+            } else {
+                setError(data.detail || "Invalid credentials");
+            }
+        } catch(err) {
+            setError(err.message || "Registration failed");
+        } finally {
+            setLoading(false);
+            setUsername("");
+            setPassword("");
+            setConfirmPassword("");
+        }
+    }
 
     return (
         success ? (
@@ -52,11 +90,6 @@ function Register() {
             </div>
         ) : (
             <div className="m-h-screen flex flex-col items-center justify-center bg-zinc-950 p-6">
-                
-                <div className={`text-center ${showLoadingMsg ? 'animate-pulse opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
-                    <p className="text-yellow-500/90 text-xs font-medium">Using free tier services.</p>
-                    <p className="text-zinc-500 text-[10px] mb-3">Waking up server, please be patient...</p>
-                </div>
 
                 <div className="bg-zinc-900 w-xs md:w-lg h-auto rounded-md border border-zinc-800 p-4 sm:p-6 fade-in">
                     {/* Logo and Header */}
@@ -65,10 +98,10 @@ function Register() {
                             <img src="/icon.svg" alt="Vertex Logo" className="w-full h-full" />
                         </div>
                         <h1 className="text-2xl font-semibold text-white tracking-tight">Vertex</h1>
-                        <p className="text-zinc-400 text-sm mt-2">Sign in to access your rooms.</p>
+                        <p className="text-zinc-400 text-sm mt-2">Create you identity to access rooms.</p>
                     </div>
 
-                    <form onSubmit={""} className="space-y-3 sm:space-y-5 fade-in">
+                    <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-5 fade-in">
                         <div>
                             <label htmlFor="username" className="block text-xs font-medium text-zinc-500 mb-1.5 ml-1">Username</label>
                             <input type="text" id="username" disabled={loading} value={username} onChange={e => setUsername(e.target.value)} className="w-full bg-black/20 border border-zinc-800 rounded-md px-4 py-2 sm:py-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition placeholder-zinc-600 font-medium" placeholder="e.g. m_sipho" required autoFocus autoComplete="off" />
@@ -92,7 +125,7 @@ function Register() {
                                 Display name
                                 <span className="text-zinc-600 ml-1">(Optional)</span>
                             </label>
-                            <input type="text" id="displayName" disabled={loading} value={displayName} onChange={e => setDisplayName(e.target.value)} className="w-full bg-black/20 border border-zinc-800 rounded-md px-4 py-2 sm:py-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition placeholder-zinc-600 font-medium" placeholder="e.g. Joker" required autoComplete="off" />
+                            <input type="text" id="displayName" disabled={loading} value={displayName} onChange={e => setDisplayName(e.target.value)} className="w-full bg-black/20 border border-zinc-800 rounded-md px-4 py-2 sm:py-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition placeholder-zinc-600 font-medium" placeholder="e.g. Joker" autoComplete="off" />
                             <p className="text-[10px] text-zinc-500 mt-1.5 ml-1 flex items-center gap-1">
                                 <Info size={10}/> This is the name that will appear in chat.
                             </p>
