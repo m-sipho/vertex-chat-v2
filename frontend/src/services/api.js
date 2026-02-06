@@ -56,3 +56,9 @@ export async function registerUser(username, password, display_name = undefined)
         })
     })
 }
+
+export async function createRoom(title) {
+    return apiClient(`/create-room?title=${encodeURIComponent(title)}`, () => (sessionStorage.getItem("token")), {
+        method: "POST",
+    })
+}
