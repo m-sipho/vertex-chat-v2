@@ -9,7 +9,7 @@ class UserData(BaseModel):
 class LoginResponse(BaseModel):
     access_token: str
     access_type: str
-    display_name: str
+    display_name: str | None = None
     avatar_seed: str
 
 class TokenData(BaseModel):
