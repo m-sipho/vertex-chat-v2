@@ -79,7 +79,11 @@ class RoomManager:
                     'pending_users': {},
                     'message_history': []
                 }
-                return {"status": "success", "room_code": code, "message": "Room created successfully."}
+                return {
+                    "status": "success",
+                    "room_code": code,
+                    "title": title,
+                    "message": "Room created successfully."}
         raise NoAvailableRoomError("No available rooms")
     
 
