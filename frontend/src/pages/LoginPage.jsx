@@ -73,7 +73,7 @@ function LoginPage() {
                 <p className="text-zinc-500 text-[10px] mb-3">Waking up server, please be patient...</p>
             </div>
 
-            <div className="bg-zinc-900 md:w-lg h-auto rounded-md border border-zinc-800 p-6">
+            <div className="bg-zinc-900 w-xs md:w-lg h-auto rounded-md border border-zinc-800 p-6 fade-in">
                 {/* Logo and Header */}
                 <div className="flex flex-col items-center mb-8">
                     <div className="w-16 h-16 rounded-md flex items-center justify-center">
@@ -83,14 +83,14 @@ function LoginPage() {
                     <p className="text-zinc-400 text-sm mt-2">Sign in to access your rooms.</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-5 fade-in">
                     <div>
-                        <label htmlFor="username" className="block text-xs font-medium text-zinc-500 mb-1.5 ml-1">USERNAME</label>
+                        <label htmlFor="username" className="block text-xs font-medium text-zinc-500 mb-1.5 ml-1">Username</label>
                         <input type="text" id="username" disabled={loading} value={username} onChange={e => setUsername(e.target.value)} className="w-full bg-black/20 border border-zinc-800 rounded-md px-4 py-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition placeholder-zinc-600 font-medium" placeholder="e.g. m_sipho" required autoFocus autoComplete="off" />
                     </div>
 
                     <div>
-                        <label htmlFor="password" className="block text-xs font-medium text-zinc-500 mb-1.5 ml-1">PASSWORD</label>
+                        <label htmlFor="password" className="block text-xs font-medium text-zinc-500 mb-1.5 ml-1">Password</label>
                         <input type="password" id="password" disabled={loading} value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-black/20 border border-zinc-800 rounded-md px-4 py-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition placeholder-zinc-600 font-medium" placeholder="••••••••" required autoComplete="off" />
                     </div>
 

@@ -25,7 +25,7 @@ function Dashboard() {
 
                     {/* User profile */}
                     <div className="group cursor-pointer">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center border border-zinc-600 hover:border-zinc-500 transition" title={displayName}>
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center border border-zinc-600 hover:border-zinc-500 transition" title={displayName ? displayName : 'Not specified'}>
                             <img src={`https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${seed}&radius=50`} alt="avatar"/>
                         </div>
                     </div>
