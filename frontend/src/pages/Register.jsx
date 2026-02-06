@@ -41,7 +41,7 @@ function Register() {
         e.preventDefault();
 
         if (!passwordMatch) {
-            setError("Passowords do not match");
+            setError("Passwords do not match");
             setPassword("");
             setConfirmPassword("");
             return;
