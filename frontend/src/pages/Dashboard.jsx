@@ -8,7 +8,8 @@ function Dashboard() {
     const [myRooms, setMyRooms] = useState([]) // Stores a list of disctionaries
     const [displayName, setDisplayName] = useState("");
     const [isModalOpen, setModalOpen] = useState(false);
-    const [error, setError] = useState("");
+    const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null);
     const [sidebarLoading, setSidebarLoading] = useState(false);
 
     useEffect(() => {
@@ -21,6 +22,7 @@ function Dashboard() {
 
                 const data = await getAllRooms();
                 setMyRooms(data);
+                setSuccess("Room(s) loaded successfully.")
             } catch(err) {
                 setError("Failed to fetch data", err)
             } finally {
@@ -38,8 +40,14 @@ function Dashboard() {
             }, 4000)
 
             return () => clearTimeout(timer);
+        } else if (success) {
+            const timer = setTimeout(() => {
+                setSuccess(null)
+            }, 2000)
+
+            return () => clearTimeout(timer);
         }
-    }, [error])
+    }, [success, error])
 
     async function handleCreateRoom(formData) {
         try {
@@ -48,6 +56,7 @@ function Dashboard() {
             let copyOfMyRooms = [...myRooms];
             copyOfMyRooms.push(data);
             setMyRooms(copyOfMyRooms);
+            setSuccess("Room created successfully.")
 
         } catch (err) {
             console.error(err)
@@ -142,6 +151,13 @@ function Dashboard() {
                             {error}
                         </div>
                     )}
+                    
+                    {success && (
+                        <div className="fixed top-5 text-emerald-400 text-xs text-center bg-emerald-500/10 border border-emerald-500/20 p-2 rounded transition fade-out">
+                            {success}
+                        </div>
+                    )}
+
                     {/* Empty state */}
                     <div className="w-24 h-24 bg-zinc-900 rounded-full flex items-center justify-center mb-6 border border-zinc-800 shadow-inner">
                         <MessageCircleMore size={36} className="text-zinc-700" />
