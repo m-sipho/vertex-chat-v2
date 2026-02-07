@@ -1,7 +1,8 @@
-import { User, Plus, Hash, LogOut, MessageCircleMore, Users, Loader, Settings } from "lucide-react"
-import { useState, useEffect } from "react"
+import { User, Plus, Hash, LogOut, MessageCircleMore, Users, Loader, Settings, ArrowLeft, Paperclip, Send } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
 import NewSessionModal from "../modals/NewSessionModal"
 import { createRoom, getAllRooms } from "../services/api"
+import RoomHeader from "../components/RoomHeader"
 
 function Dashboard() {
     const [seed, setSeed] = useState("");
@@ -11,6 +12,8 @@ function Dashboard() {
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
     const [sidebarLoading, setSidebarLoading] = useState(false);
+    const [isRoomOpen, setIsRoomOpen] = useState(false);
+    const [selectedRoom, setSelectedRoom] = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -32,7 +35,7 @@ function Dashboard() {
         fetchData();
     }, [])
 
-    //Show error for 4 seconds
+    //Show error/sucess for 4 seconds
     useEffect(() => {
         if (error) {
             const timer = setTimeout(() => {
@@ -103,7 +106,7 @@ function Dashboard() {
                         </div>
                     ) : myRooms && myRooms.length > 0 ? (
                         myRooms.map(myRoom => (
-                            <div key={myRoom.room_code} className="cursor-pointer py-3 px-3 rounded-lg transition flex flex-col gap-2 group mb-2 mx-2 bg-zinc-900/50 hover:bg-zinc-700/70">
+                            <div onClick={() => { setSelectedRoom(myRoom); setIsRoomOpen(true); }} key={myRoom.room_code} className={`cursor-pointer py-3 px-3 rounded-lg transition flex flex-col gap-2 group mb-2 mx-2 hover:bg-zinc-700/70 ${isRoomOpen && selectedRoom?.room_code === myRoom.room_code ? 'bg-zinc-700/70' : 'bg-zinc-900/50'}`}>
                                 <div className="flex items-center gap-2.5 overflow-hidden w-full">
                                     <Hash size={16} className="text-indigo-400 flex-shrink-0" />
                                     <div className="flex-1 min-w-0 truncate text-white">
@@ -145,7 +148,7 @@ function Dashboard() {
                     </div>
                 </div>
 
-                <div className="flex-1 flex items-center justify-center flex-col relative">
+                <div className={`flex-1 flex items-center flex-col relative transition`}>
                     {error && (
                         <div className="fixed top-5 text-red-400 text-xs text-center bg-red-500/10 border border-red-500/20 p-2 rounded transition fade-out">
                             {error}
@@ -158,12 +161,54 @@ function Dashboard() {
                         </div>
                     )}
 
-                    {/* Empty state */}
-                    <div className="w-24 h-24 bg-zinc-900 rounded-full flex items-center justify-center mb-6 border border-zinc-800 shadow-inner">
-                        <MessageCircleMore size={36} className="text-zinc-700" />
+                    {/* Room header placed at top of the message area (only when a room is open) */}
+                    {isRoomOpen && (
+                        <div className="h-16 w-full px-6 py-4 bg-zinc-800 border-b border-zinc-700 flex items-center justify-between gap-3">
+                            <div>
+                                <button onClick={() => { setIsRoomOpen(false); setSelectedRoom(null); }} className="text-sm text-zinc-400 hover:text-zinc-200">
+                                    <ArrowLeft />
+                                </button>
+                            </div>
+                            <div className="flex-1">
+                                <RoomHeader room={selectedRoom} />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Main message area (centered when no room open) */}
+                    <div className="w-full flex-1 flex items-center justify-center flex-col">
+                        {!isRoomOpen ? (
+                            <>
+                                <div className="w-24 h-24 bg-zinc-900 rounded-full flex items-center justify-center mb-6 border border-zinc-800 shadow-inner">
+                                    <MessageCircleMore size={36} className="text-zinc-700" />
+                                </div>
+                                <h2 className="text-lg font-medium text-zinc-300">No room selected</h2>
+                                <p className="text-sm mt-2 max-w-xs text-center text-zinc-700">Choose an active room from the sidebar or create a new one to start chatting.</p>
+                            </>
+                        ) : (
+                            <div className="w-full h-full flex flex-col">
+                                <div className="flex-1 overflow-auto p-4">
+                                    {/* Messages will go here - replace with real message list */}
+                                    <div className="text-zinc-500 text-center text-sm">No messages yet</div>
+                                </div>
+
+                                <div className="p-2 mb-1 mx-3 bg-zinc-900 border-t border-zinc-800 rounded-4xl">
+                                    <form className="flex items-center gap-3">
+                                        <button type="button" className="w-9 h-9 cursor-pointer flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition rounded-4xl">
+                                            <input type="file" id="file-upload" className="hidden" />
+                                            <Paperclip size={22} />
+                                        </button>
+
+                                        <input type="text" placeholder="Write a message..." className="flex-1 bg-transparent outline-none border-none focus:outline-none focus:ring-0 text-white" />
+
+                                        <button type="submit" className="w-9 h-9 flex items-center justify-center text-white rounded transition hover:bg-zinc-700 rounded-4xl p-2">
+                                            <Send />
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    <h2 className="text-lg font-medium text-zinc-300">No room selected</h2>
-                    <p className="text-sm mt-2 max-w-xs text-center text-zinc-700">Choose an active room from the sidebar or create a new one to start chatting.</p>
                 </div>
             </div>
 
