@@ -13,6 +13,7 @@ from app.core.exceptions import (
 from typing import Optional
 import uuid
 
+
 class RoomManager:
     def __init__(self):
         # Simulate a database for now
@@ -52,6 +53,12 @@ class RoomManager:
 
     async def create_room(self, title: str, host: UserData):
         '''Logic to save the room and the host'''
+        if len(title) > 30:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Length of title cannot be greater than 20"
+            )
+        
         if not host.display_name:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -66,6 +73,13 @@ class RoomManager:
                     detail="You can only host up to one room."
                 )
         
+        # Check if title is valid
+        if not title:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Provide a valid room title"
+            )
+        
         max_retries = 10
         for _ in range(max_retries):
             code = self.generate_room_code()
@@ -79,7 +93,13 @@ class RoomManager:
                     'pending_users': {},
                     'message_history': []
                 }
-                return {"status": "success", "room_code": code, "message": "Room created successfully."}
+                return {
+                    "status": "success",
+                    "room_code": code,
+                    "title": title,
+                    "role": "host",
+                    "members_length": self._active_rooms[code]['active_users'],
+                    "message": "Room created successfully."}
         raise NoAvailableRoomError("No available rooms")
     
 
@@ -292,3 +312,20 @@ class RoomManager:
 
     async def get_all_rooms_info(self):
         return self._active_rooms
+    
+    
+    async def get_all_rooms_in(self, user_id: uuid.UUID):
+        '''Logic to get all rooms where user with `user_id` is active'''
+        found_rooms = []
+
+        for room_code, room_details in list(self._active_rooms.items()):
+            if user_id in room_details['active_users']:
+                if user_id == room_details['host_id']:
+                    room_details['role'] = 'host'
+                else:
+                    room_details['role'] = 'member'
+                room_details['room_code'] = room_code
+                found_rooms.append(room_details)
+
+        return found_rooms
+

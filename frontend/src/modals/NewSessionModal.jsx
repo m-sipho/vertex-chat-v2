@@ -1,9 +1,19 @@
 import { X, Info, Users } from "lucide-react"
 import { useState } from "react"
 
-function NewSessionModal({ onClose }) {
+function NewSessionModal({ onCreateRoom, onClose }) {
     const [isCreateClicked, setCreateClicked] = useState(true)
     const [isJoinClicked, setJoinClicked] = useState(false)
+    const [roomName, setRoomName] = useState("")
+
+    async function handleCreateSubmit(e) {
+        e.preventDefault();
+
+        onClose();
+
+        await onCreateRoom({title: roomName})
+    }
+
     return (
         <div className=" backdrop-blur-xs fixed inset-0 flex items-center justify-center p-4 fade-in">
             <div className="bg-zinc-900 w-full max-w-md rounded-xl border border-zinc-700 overflow-hidden">
@@ -27,7 +37,7 @@ function NewSessionModal({ onClose }) {
                         <div className="space-y-5">
                             <div>
                                 <label htmlFor="roomName" className="text-xs font-medium text-zinc-400 mb-1.5">Room Name</label>
-                                <input type="text" className="w-full bg-black/20 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none transition placeholder-zinc-600" placeholder="e.g Chess Club" required autoComplete="off" autoFocus />
+                                <input type="text" value={roomName} onChange={e => (setRoomName(e.target.value))} className="w-full bg-black/20 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none transition placeholder-zinc-600" placeholder="e.g Chess Club" required autoComplete="off" autoFocus />
                             </div>
                             <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-lg p-3 flex gap-3 items-start">
                                 <Info className="text-indigo-500 mt-0.5 text-xs" size={13} />
@@ -36,7 +46,7 @@ function NewSessionModal({ onClose }) {
                                     <p className="text-[10px] text-indigo-300/70 mt-0.5">You will moderate this room. Max 1 active hosted room.</p>
                                 </div>
                             </div>
-                            <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded font-medium text-sm transition">Create & Enter</button>
+                            <button type="submit" onClick={handleCreateSubmit} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded font-medium text-sm cursor-pointer transition">Create & Enter</button>
                         </div>
                     )}
 
@@ -54,7 +64,7 @@ function NewSessionModal({ onClose }) {
                                     <p className="text-[10px] text-emerald-300/70 mt-0.5">Join an existing room. Max 2 concurrent rooms.</p>
                                 </div>
                             </div>
-                            <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded font-medium text-sm transition">Join Session</button>
+                            <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded font-medium text-sm cursor-pointer transition">Join Session</button>
                         </div>
                     )}
                 </div>

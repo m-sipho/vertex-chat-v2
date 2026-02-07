@@ -56,6 +56,11 @@ async def get_all_rooms(current_user: Annotated[UserData, Depends(get_current_us
     result = await global_manager.get_all_rooms_info()
     return result
 
+@router.get("/rooms/user")
+async def get_all_rooms_in(current_user: Annotated[UserData, Depends(get_current_user)]):
+    result = await global_manager.get_all_rooms_in(current_user.id)
+    return result
+
 @router.websocket("/ws/{room_code}")
 async def websocket_endpoint(websocket: WebSocket, room_code: str, db: AsyncSession = Depends(get_db), token: str = Query(...)):
 
