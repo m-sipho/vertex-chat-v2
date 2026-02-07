@@ -67,6 +67,13 @@ class RoomManager:
                     detail="You can only host up to one room."
                 )
         
+        # Check if title is valid
+        if not title:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Provide a valid room title"
+            )
+        
         max_retries = 10
         for _ in range(max_retries):
             code = self.generate_room_code()
