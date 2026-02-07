@@ -1,7 +1,7 @@
-import { User, Plus, Hash, LogOut, MessageCircleMore, Users } from "lucide-react"
+import { User, Plus, Hash, LogOut, MessageCircleMore, Users, Loader, Settings } from "lucide-react"
 import { useState, useEffect } from "react"
 import NewSessionModal from "../modals/NewSessionModal"
-import { createRoom } from "../services/api"
+import { createRoom, getAllRooms } from "../services/api"
 
 function Dashboard() {
     const [seed, setSeed] = useState("");
@@ -9,11 +9,25 @@ function Dashboard() {
     const [displayName, setDisplayName] = useState("");
     const [isModalOpen, setModalOpen] = useState(false);
     const [error, setError] = useState("");
+    const [sidebarLoading, setSidebarLoading] = useState(false);
 
     useEffect(() => {
-        setDisplayName(sessionStorage.getItem("display_name"))
+        const fetchData = async () => {
 
-        setSeed(sessionStorage.getItem("avatar_seed"))
+            setSidebarLoading(true);
+            try {
+                setDisplayName(sessionStorage.getItem("display_name"))
+                setSeed(sessionStorage.getItem("avatar_seed"))
+
+                const data = await getAllRooms();
+                setMyRooms(data);
+            } catch(err) {
+                setError("Failed to fetch data", err)
+            } finally {
+                setSidebarLoading(false);
+            }
+        }
+        fetchData();
     }, [])
 
     //Show error for 4 seconds
@@ -74,35 +88,41 @@ function Dashboard() {
 
                     {/* Room list */}
                     <div className="flex-1 flex flex-col overflow-y-auto px-3 py-2 space-y-1 gap-1">
-                        {myRooms && myRooms.length > 0 && (
-                            myRooms.map(myRoom => (
-                                <div className="cursor-pointer py-3 px-3 rounded-lg transition flex flex-col gap-2 group mb-2 mx-2 bg-zinc-800/50 hover:bg-zinc-700/70 border-l-3 border-indigo-500">
-                                    <div className="flex items-center gap-2.5 overflow-hidden w-full">
-                                        <Hash size={16} className="text-indigo-400 flex-shrink-0" />
-                                        <div className="flex-1 min-w-0">
-                                            <span className="text-sm font-medium text-zinc-100">{myRoom.title}</span>
-                                        </div>
-                                        <span className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 flex-shrink-0">
-                                            {myRoom.room_code}
-                                        </span>
+                        {sidebarLoading ? (
+                        <div className="flex text-white justify-center items-center">
+                            <Loader className="animate-spin text-center" />
+                        </div>
+                    ) : myRooms && myRooms.length > 0 ? (
+                        myRooms.map(myRoom => (
+                            <div key={myRoom.room_code} className="cursor-pointer py-3 px-3 rounded-lg transition flex flex-col gap-2 group mb-2 mx-2 bg-zinc-900/50 hover:bg-zinc-700/70">
+                                <div className="flex items-center gap-2.5 overflow-hidden w-full">
+                                    <Hash size={16} className="text-indigo-400 flex-shrink-0" />
+                                    <div className="flex-1 min-w-0 truncate text-white">
+                                        <span className="text-sm font-medium text-zinc-100">{myRoom.title}</span>
                                     </div>
-                                    
-                                    <div className="flex items-center gap-1.5 text-xs text-zinc-400 ml-[22px]">
-                                        {myRoom.members_length > 1 ? (
-                                            <>
-                                                <Users size={13} className="text-indigo-400/60 flex-shrink-0" />
-                                                <span>{myRoom.members_length} members</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <User size={13} className="text-indigo-400/60 flex-shrink-0" />
-                                                <span>Only you</span>
-                                            </>
-                                        )}
-                                    </div>
+                                    <span className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 flex-shrink-0">
+                                        {myRoom.room_code}
+                                    </span>
                                 </div>
-                            ))
-                        )}
+                                
+                                <div className="flex items-center gap-1.5 text-xs text-zinc-400 ml-[22px]">
+                                    {myRoom.members_length > 1 ? (
+                                        <>
+                                            <Users size={13} className="text-indigo-400/60 flex-shrink-0" />
+                                            <span>{myRoom.members_length} members</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <User size={13} className="text-indigo-400/60 flex-shrink-0" />
+                                            <span>Only you</span>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-zinc-500 text-center text-sm">No rooms yet</div>
+                    )}
                     </div>
 
                     <div className="p-4 border-t border-zinc-700 text-xs text-zinc-500 flex justify-between items-center">
@@ -110,8 +130,8 @@ function Dashboard() {
                             <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm"></span>
                             <span>Connected</span>
                         </div>
-                        <button className="hover:text-zinc-300 transition" title="Sign Out">
-                            <LogOut />
+                        <button className="hover:text-zinc-300 transition" title="Settings">
+                            <Settings />
                         </button>
                     </div>
                 </div>
