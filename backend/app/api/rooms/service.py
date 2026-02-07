@@ -320,6 +320,10 @@ class RoomManager:
 
         for room_code, room_details in list(self._active_rooms.items()):
             if user_id in room_details['active_users']:
+                if user_id == room_details['host_id']:
+                    room_details['role'] = 'host'
+                else:
+                    room_details['role'] = 'member'
                 room_details['room_code'] = room_code
                 found_rooms.append(room_details)
 
