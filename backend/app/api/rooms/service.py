@@ -13,6 +13,7 @@ from app.core.exceptions import (
 from typing import Optional
 import uuid
 
+
 class RoomManager:
     def __init__(self):
         # Simulate a database for now
@@ -297,3 +298,16 @@ class RoomManager:
 
     async def get_all_rooms_info(self):
         return self._active_rooms
+    
+    
+    async def get_all_rooms_in(self, user_id: uuid.UUID):
+        '''Logic to get all rooms where user with `user_id` is active'''
+        found_rooms = []
+
+        for room_code, room_details in list(self._active_rooms.items()):
+            if user_id in room_details['active_users']:
+                room_details['room_code'] = room_code
+                found_rooms.append(room_details)
+
+        return found_rooms
+
