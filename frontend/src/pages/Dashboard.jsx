@@ -1,11 +1,12 @@
-import { UserRound, Plus, Hash, LogOut, MessageCircleMore } from "lucide-react"
+import { User, Plus, Hash, LogOut, MessageCircleMore, Users } from "lucide-react"
 import { useState, useEffect } from "react"
 import NewSessionModal from "../modals/NewSessionModal"
 import { createRoom } from "../services/api"
 
 function Dashboard() {
-    const [seed, setSeed] = useState("")
-    const [displayName, setDisplayName] = useState("")
+    const [seed, setSeed] = useState("");
+    const [myRooms, setMyRooms] = useState([]) // Stores a list of disctionaries
+    const [displayName, setDisplayName] = useState("");
     const [isModalOpen, setModalOpen] = useState(false);
     const [error, setError] = useState("");
 
@@ -29,6 +30,11 @@ function Dashboard() {
     async function handleCreateRoom(formData) {
         try {
             const data = await createRoom(formData.title);
+
+            let copyOfMyRooms = [...myRooms];
+            copyOfMyRooms.push(data);
+            setMyRooms(copyOfMyRooms);
+
         } catch (err) {
             console.error(err)
             setError(`${err}`)
@@ -68,12 +74,35 @@ function Dashboard() {
 
                     {/* Room list */}
                     <div className="flex-1 flex flex-col overflow-y-auto px-3 py-2 space-y-1 gap-1">
-                        {/* <div className="cursor-pointer py-2.5 px-3 rounded-r-md transition flex items-center justify-between group mb-1 mx-1 bg-white/2 hover:bg-zinc-700 border-l-2 border-indigo-500">
-                            <div className="flex items-center gap-3 overflow-hidden">
-                                <Hash size={16} className="text-indigo-500" />
-                                <span className="text-sm font-medium truncate text-white">Planning</span>
-                            </div>
-                        </div> */}
+                        {myRooms && myRooms.length > 0 && (
+                            myRooms.map(myRoom => (
+                                <div className="cursor-pointer py-3 px-3 rounded-lg transition flex flex-col gap-2 group mb-2 mx-2 bg-zinc-800/50 hover:bg-zinc-700/70 border-l-3 border-indigo-500">
+                                    <div className="flex items-center gap-2.5 overflow-hidden w-full">
+                                        <Hash size={16} className="text-indigo-400 flex-shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                            <span className="text-sm font-medium text-zinc-100">{myRoom.title}</span>
+                                        </div>
+                                        <span className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 flex-shrink-0">
+                                            {myRoom.room_code}
+                                        </span>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-1.5 text-xs text-zinc-400 ml-[22px]">
+                                        {myRoom.members_length > 1 ? (
+                                            <>
+                                                <Users size={13} className="text-indigo-400/60 flex-shrink-0" />
+                                                <span>{myRoom.members_length} members</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <User size={13} className="text-indigo-400/60 flex-shrink-0" />
+                                                <span>Only you</span>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
 
                     <div className="p-4 border-t border-zinc-700 text-xs text-zinc-500 flex justify-between items-center">

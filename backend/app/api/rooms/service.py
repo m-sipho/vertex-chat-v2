@@ -83,6 +83,7 @@ class RoomManager:
                     "status": "success",
                     "room_code": code,
                     "title": title,
+                    "members_length": self._active_rooms[code]['active_users'],
                     "message": "Room created successfully."}
         raise NoAvailableRoomError("No available rooms")
     
