@@ -53,6 +53,12 @@ class RoomManager:
 
     async def create_room(self, title: str, host: UserData):
         '''Logic to save the room and the host'''
+        if len(title) > 30:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Length of title cannot be greater than 20"
+            )
+        
         if not host.display_name:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
