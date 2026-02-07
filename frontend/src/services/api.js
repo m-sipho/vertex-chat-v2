@@ -62,3 +62,9 @@ export async function createRoom(title) {
         method: "POST",
     })
 }
+
+export async function getAllRooms() {
+    return apiClient("/rooms/user", () => sessionStorage.getItem("token"), {
+        method: "GET",
+    })
+}
