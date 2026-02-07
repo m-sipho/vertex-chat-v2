@@ -74,7 +74,7 @@ function Dashboard() {
             <div className="h-screen bg-zinc-950 flex">
                 {/* Sidebar */}
                 <div className="w-84 h-screen border-r border-zinc-700 flex flex-col bg-zinc-800">
-                    <div className="h-16 w-full flex items-center justify-between px-5 border-b border-zinc-700">
+                    <div className="h-16 w-full flex items-center justify-between px-5">
                         <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8" >
                                 <img src="/icon.svg" alt="Vertex Logo" className="w-full h-full" />
@@ -163,7 +163,7 @@ function Dashboard() {
 
                     {/* Room header placed at top of the message area (only when a room is open) */}
                     {isRoomOpen && (
-                        <div className="h-16 w-full px-6 py-4 bg-zinc-800 border-b border-zinc-700 flex items-center justify-between gap-3">
+                        <div className="fade-out h-16 w-full px-6 py-4 bg-zinc-800 border-b border-zinc-700 flex items-center justify-between gap-3">
                             <div>
                                 <button onClick={() => { setIsRoomOpen(false); setSelectedRoom(null); }} className="text-sm text-zinc-400 hover:text-zinc-200">
                                     <ArrowLeft />
@@ -192,7 +192,7 @@ function Dashboard() {
                                     <div className="text-zinc-500 text-center text-sm">No messages yet</div>
                                 </div>
 
-                                <div className="p-2 mb-1 mx-3 bg-zinc-900 border-t border-zinc-800 rounded-4xl">
+                                <div className="fade-in p-2 mb-1 mx-3 bg-zinc-900 border-t border-zinc-800 rounded-4xl">
                                     <form className="flex items-center gap-3">
                                         <button type="button" className="w-9 h-9 cursor-pointer flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition rounded-4xl">
                                             <input type="file" id="file-upload" className="hidden" />
