@@ -320,12 +320,13 @@ class RoomManager:
 
         for room_code, room_details in list(self._active_rooms.items()):
             if user_id in room_details['active_users']:
+                room_response = room_details.copy()
                 if user_id == room_details['host_id']:
-                    room_details['role'] = 'host'
+                    room_response['role'] = 'host'
                 else:
-                    room_details['role'] = 'member'
-                room_details['room_code'] = room_code
-                found_rooms.append(room_details)
+                    room_response['role'] = 'member'
+                room_response['room_code'] = room_code
+                found_rooms.append(room_response)
 
         return found_rooms
 
