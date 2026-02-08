@@ -73,7 +73,6 @@ async def approve(request: ApproveRequest, current_user: Annotated[UserData, Dep
             room_title=room_state["title"]
         )
 
-    # Notify room owner that request was handled
     request_id = f"{status["user_id"]}_{request.room_code}"
 
     # Notify room owner that request is handled
@@ -87,7 +86,34 @@ async def approve(request: ApproveRequest, current_user: Annotated[UserData, Dep
 
 @router.post("/reject", status_code=status.HTTP_200_OK)
 async def reject(request: ApproveRequest, current_user: Annotated[UserData, Depends(get_current_user)]):
+    """
+    Reject a join request
+    - Remove the request
+    - Send a real time notification to the requester
+    - Notify the room owner that the request was handled
+    """
     status = await global_manager.reject_user(current_user.id, request.room_code, request.target_username)
+
+    # Get the room state
+    room_state = await global_manager.get_room_state(request.room_code)
+
+    if room_state:
+        # Notify user their request was rejected
+        await global_request_manager.notify_request_rejected(
+            user_id=status["user_id"],
+            room_code=request.room_code,
+            room_title=room_state["title"]
+        )
+    
+    request_id = f"{status["user_id"]}_{request.room_code}"
+
+    # Notify room owner that request is handled
+    await global_request_manager.notify_request_removed(
+        room_owner_id=current_user.id,
+        request_id=request_id,
+        action="rejected"
+    )
+
     return status
 
 @router.get("/pending-requests", status_code=status.HTTP_200_OK)
