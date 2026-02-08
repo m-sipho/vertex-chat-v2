@@ -229,7 +229,7 @@ class RoomManager:
             raise UserNotFoundError(f"'{target_username}' not found on waiting users")
         
         del room['pending_users'][user_to_reject.id]
-        return {"status": "removed", "message": f"'{target_username}' is rejected to join"}
+        return {"status": "removed", "user_id": user_to_reject.id, "message": f"'{target_username}' is rejected to join"}
     
 
     async def leave_room(self, user_id, room_code, new_host_id: Optional[uuid.UUID] = None):
