@@ -328,4 +328,17 @@ class RoomManager:
                 found_rooms.append(room_details)
 
         return found_rooms
+    
+
+    async def get_pending_requests_for_user(self, user_id: uuid.UUID):
+        """Get all pending requests for rooms they own"""
+        pending_requests = []
+
+        for _, room_details in list(self._active_rooms.items()):
+            room_details_copy = room_details.copy()
+            if room_details_copy['host_id'] == user_id:
+                for _, user_obj in (room_details_copy['pending_users'].items()):
+                    pending_requests.append(user_obj)
+
+        return pending_requests
 
