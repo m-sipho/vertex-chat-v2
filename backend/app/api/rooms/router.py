@@ -49,12 +49,40 @@ async def join(request: JoinLeaveRequest, current_user: Annotated[UserData, Depe
 
         # Send real time notification to room owner
         await global_request_manager.notify_new_request(room_owner_id=room_state["host_id"], request_data=request_data)
-        
+
     return results
 
 @router.post("/approve", status_code=status.HTTP_200_OK)
 async def approve(request: ApproveRequest, current_user: Annotated[UserData, Depends(get_current_user)]):
+    """
+    Approve a join request
+    - Add user to the room
+    - Send real time notification to the requester
+    - Notify the room owner that the request was handled
+    """
     status = await global_manager.approve_user(current_user.id, request.room_code, request.target_username)
+
+    # Get the room state
+    room_state = await global_manager.get_room_state(request.room_code)
+
+    if room_state:
+        # Notify user their request was approved
+        await global_request_manager.notify_request_approved(
+            user_id=status["user_id"],
+            room_code=request.room_code,
+            room_title=room_state["title"]
+        )
+
+    # Notify room owner that request was handled
+    request_id = f"{status["user_id"]}_{request.room_code}"
+
+    # Notify room owner that request is handled
+    await global_request_manager.notify_request_removed(
+        room_owner_id=current_user.id,
+        request_id=request_id,
+        action="approved"
+    )
+
     return status
 
 @router.post("/reject", status_code=status.HTTP_200_OK)
