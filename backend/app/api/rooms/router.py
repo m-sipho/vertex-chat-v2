@@ -15,6 +15,7 @@ from sqlalchemy import select
 from app.api.users.models import User
 from app.core.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
+from .dependencies import global_request_manager
 
 router = APIRouter(
     prefix="",
@@ -41,6 +42,11 @@ async def reject(request: ApproveRequest, current_user: Annotated[UserData, Depe
     status = await global_manager.reject_user(current_user.id, request.room_code, request.target_username)
     return status
 
+@router.get("/pending-requests", status_code=status.HTTP_200_OK)
+async def pending_requests(current_user: Annotated[UserData, Depends(get_current_user)]):
+    result = await global_manager.get_pending_requests_for_user(current_user.id)
+    return result
+
 @router.post("/leave-room", status_code=status.HTTP_200_OK)
 async def leave_room(request: LeaveRequest, current_user: Annotated[UserData, Depends(get_current_user)]):
     status = await global_manager.leave_room(current_user.id, request.room_code, request.new_host_id)
@@ -60,6 +66,85 @@ async def get_all_rooms(current_user: Annotated[UserData, Depends(get_current_us
 async def get_all_rooms_in(current_user: Annotated[UserData, Depends(get_current_user)]):
     result = await global_manager.get_all_rooms_in(current_user.id)
     return result
+
+
+# REQUEST WEBSOCKET
+@router.websocket("/ws/requests")
+async def request_websocket_endpoint(websocket: WebSocket, db: AsyncSession = Depends(get_db), token: str = Query(...)):
+    """
+    WebSocket for real time join request notifications.
+    User connect to this to receive notifications about:
+    - New join requests (if they are the room owner)
+    - Request approvals/rejections (if they requested to join)
+    """
+
+    try:
+        # Decode the token
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+
+        # Query the database for the user
+        query = select(User).where(User.username == username)
+        result = await db.execute(query)
+        user_result = result.scalars().first()
+
+        if not user_result:
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+            return
+        
+        # display_name = user_result.display_name
+        user_id = user_result.id
+
+        if username is None or user_id is None:
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+            return
+        
+    except InvalidTokenError:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+    
+    # Connect the user
+    await global_request_manager.connect(websocket, user_id)
+
+    try:
+        # Send all pending requests for rooms they own
+        pending_requests = await global_manager.get_pending_requests_for_user(user_id)
+        if pending_requests:
+            await websocket.send_json({
+                "type": "initial_requests",
+                "requests": pending_requests
+            })
+
+        while True:
+            data = await websocket.receive_text()
+
+            try:
+                event = json.load(data)
+            except json.JSONDecodeError:
+                logger.warning(f"Invalid JSON from user {user_id}: {data}")
+                continue
+
+            event_type = event.get("type")
+
+            if event_type == "get_pending_requests":
+                # User requested current pending requests
+                pending_requests = await global_manager.get_pending_requests_for_user(user_id)
+                await websocket.send_json({
+                    "type": "pending_requests",
+                    "requests": pending_requests
+                })
+
+            else:
+                logger.warning(f"Unknown event type from user {user_id}: {event_type}")
+
+    except WebSocketDisconnect:
+        global_request_manager.disconnect(websocket, user_id)
+        logger.info(f"User {user_id} disconnected from request notifications")
+    except Exception as e:
+        logger.error(f"Error in request WebSocket for user {user_id}: {e}")
+        global_request_manager.disconnect(websocket, user_id)
+
+
 
 @router.websocket("/ws/{room_code}")
 async def websocket_endpoint(websocket: WebSocket, room_code: str, db: AsyncSession = Depends(get_db), token: str = Query(...)):
