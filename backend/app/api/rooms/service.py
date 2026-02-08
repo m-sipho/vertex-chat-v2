@@ -204,7 +204,7 @@ class RoomManager:
 
         room['active_users'][user_to_approve.id] = user_to_approve
         del room['pending_users'][user_to_approve.id]
-        return {"status": "approved", "message": f"'{user_to_approve.display_name}' joined the room"}
+        return {"status": "approved", "user_id": user_to_approve.id , "message": f"'{user_to_approve.display_name}' joined the room"}
     
 
     async def reject_user(self, host_id, room_code, target_username):
