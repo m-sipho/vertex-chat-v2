@@ -29,7 +29,27 @@ async def create_room(title: str, current_user: Annotated[UserData, Depends(get_
 
 @router.post("/join-room", status_code=status.HTTP_202_ACCEPTED)
 async def join(request: JoinLeaveRequest, current_user: Annotated[UserData, Depends(get_current_user)]):
+    """
+    Request to join a room
+    - Adds the request to pending requests
+    - Send real time notification to room owner via WebSocket
+    """
     results = await global_manager.request_to_join_room(UserData(display_name=current_user.display_name, id=current_user.id), request.room_code)
+
+    # Get room info to send notification
+    room_state = await global_manager.get_room_state(request.room_code)
+    if room_state:
+        request_data = {
+            "room_code": request.room_code,
+            "room_title": room_state.get("title"),
+            "user_id": current_user.id,
+            "display_name": current_user.display_name,
+            "status": "pending"
+        }
+
+        # Send real time notification to room owner
+        await global_request_manager.notify_new_request(room_owner_id=room_state["host_id"], request_data=request_data)
+        
     return results
 
 @router.post("/approve", status_code=status.HTTP_200_OK)
@@ -119,7 +139,7 @@ async def request_websocket_endpoint(websocket: WebSocket, db: AsyncSession = De
             data = await websocket.receive_text()
 
             try:
-                event = json.load(data)
+                event = json.loads(data)
             except json.JSONDecodeError:
                 logger.warning(f"Invalid JSON from user {user_id}: {data}")
                 continue
