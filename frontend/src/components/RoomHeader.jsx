@@ -24,7 +24,7 @@ function RoomHeader({ room }) {
                             <div className={`absolute top-full right-0 mt-2 w-64 bg-zinc-900 border border-zinc-700 rounded-lg overflow-hidden z-50`}>
                                 <div className='p-3 border-b border-zinc-800 text-xs font-bold text-zinc-500 uppercase'>Pending Users</div>
                                     <div className="max-h-48 overflow-y-auto" >
-                                        <div className="p-4 text-center text-xs text-zinc-600 italic">No pending requests</div>
+                                        <div className="p-4 text-center text-xs text-zinc-600 italic pointer-events-none">No pending requests</div>
                                     </div>
                             </div>
                         )}
