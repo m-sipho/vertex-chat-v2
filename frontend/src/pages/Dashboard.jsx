@@ -6,10 +6,12 @@ import { useDashboard } from "../hooks/useDashboard"
 
 function Dashboard() {
     
-    const { myRooms, sidebarLoading, error, success, displayName, seed, handleCreateRoom} = useDashboard();
+    const { myRooms, requestedRooms, sidebarLoading, error, success, displayName, seed, handleCreateRoom, handleJoinRoom} = useDashboard();
     const [isModalOpen, setModalOpen] = useState(false);
     const [isRoomOpen, setIsRoomOpen] = useState(false);
     const [selectedRoom, setSelectedRoom] = useState(null);
+    const [pendingRequests, setPendingRequests] = useState({});
+    const [joinRequestSent, setJoinRequestSent] = useState({});
 
     return (
         <div>
@@ -42,41 +44,81 @@ function Dashboard() {
 
                     {/* Room list */}
                     <div className="flex-1 flex flex-col overflow-y-auto px-3 py-2 space-y-1 gap-1">
+
+                        {myRooms && myRooms.length > 0 && (
+                            <div className="space-y-1">
+
+                                <div className="px-5 py-1">
+                                    <span className="text-[10px] font-bold text-zinc-500 tracking-widest">ACTIVE ROOM(S)</span>
+                                </div>
+
+                                {myRooms.map(myRoom => (
+                                    <div onClick={() => { setSelectedRoom(myRoom); setIsRoomOpen(true); }} key={myRoom.room_code} className={`cursor-pointer py-3 px-3 rounded-lg transition flex flex-col gap-2 group mb-2 mx-2 hover:bg-zinc-700/70 ${isRoomOpen && selectedRoom?.room_code === myRoom.room_code ? 'bg-zinc-700/70' : 'bg-zinc-900/50'}`}>
+                                        <div className="flex items-center gap-2.5 overflow-hidden w-full">
+                                            <Hash size={16} className="text-indigo-400 flex-shrink-0" />
+                                            <div className="flex-1 min-w-0 truncate text-white">
+                                                <span className="text-sm font-medium text-zinc-100">{myRoom.title}</span>
+                                            </div>
+                                            <span className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 flex-shrink-0">
+                                                {myRoom.room_code}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-1.5 text-xs text-zinc-400 ml-[22px]">
+                                            {myRoom.members_length > 1 ? (
+                                                <>
+                                                    <Users size={13} className="text-indigo-400/60 flex-shrink-0" />
+                                                    <span>{myRoom.members_length} members</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <User size={13} className="text-indigo-400/60 flex-shrink-0" />
+                                                    <span>Only you</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {requestedRooms && requestedRooms.length > 0 && (
+                            <div className="space-y-1">
+                                
+                                <div className={`px-5 py-1 ${myRooms.length > 0 ? 'border-t border-zinc-700': ''}`}>
+                                    <span className="text-[10px] font-bold text-zinc-500 tracking-widest">PENDING APPROVAL</span>
+                                </div>
+
+                                {requestedRooms.map(room => (
+                                    <div  key={room.room_code} className={`pointer-events-none py-3 px-3 rounded-lg transition flex flex-col gap-2 group mb-2 mx-2 bg-zinc-900/20 border border-zinc-800/50 opacity-70 cursor-not-allowed select-none`}>
+                                        <div className="flex items-center gap-2.5 overflow-hidden w-full">
+                                            <Hash size={16} className="text-zinc-500 flex-shrink-0" />
+                                            <div className="flex-1 min-w-0 truncate text-white">
+                                                <span className="text-sm font-medium text-zinc-400">{room.title}</span>
+                                            </div>
+                                            <span className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 flex-shrink-0">
+                                                {room.room_code}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-1.5 text-xs text-zinc-400 ml-[22px]">
+                                            <span>Pending</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         {sidebarLoading ? (
                         <div className="flex text-white justify-center items-center">
                             <Loader className="animate-spin text-center" />
                         </div>
-                    ) : myRooms && myRooms.length > 0 ? (
-                        myRooms.map(myRoom => (
-                            <div onClick={() => { setSelectedRoom(myRoom); setIsRoomOpen(true); }} key={myRoom.room_code} className={`cursor-pointer py-3 px-3 rounded-lg transition flex flex-col gap-2 group mb-2 mx-2 hover:bg-zinc-700/70 ${isRoomOpen && selectedRoom?.room_code === myRoom.room_code ? 'bg-zinc-700/70' : 'bg-zinc-900/50'}`}>
-                                <div className="flex items-center gap-2.5 overflow-hidden w-full">
-                                    <Hash size={16} className="text-indigo-400 flex-shrink-0" />
-                                    <div className="flex-1 min-w-0 truncate text-white">
-                                        <span className="text-sm font-medium text-zinc-100">{myRoom.title}</span>
-                                    </div>
-                                    <span className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 flex-shrink-0">
-                                        {myRoom.room_code}
-                                    </span>
-                                </div>
-                                
-                                <div className="flex items-center gap-1.5 text-xs text-zinc-400 ml-[22px]">
-                                    {myRoom.members_length > 1 ? (
-                                        <>
-                                            <Users size={13} className="text-indigo-400/60 flex-shrink-0" />
-                                            <span>{myRoom.members_length} members</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <User size={13} className="text-indigo-400/60 flex-shrink-0" />
-                                            <span>Only you</span>
-                                        </>
-                                    )}
-                                </div>
+                        ) : myRooms.length == 0 && requestedRooms.length == 0 && (
+                            <div className="flex flex-col items-center justify-cente py-10 px-4 text-center">
+                                <p className="text-zinc-500 text-sm font-medium">No rooms yet</p>
+                                <p className="text-zinc-600 text-xs mt-1">Create or join a room to get started</p>
                             </div>
-                        ))
-                    ) : (
-                        <div className="text-zinc-500 text-center text-sm">No rooms yet</div>
-                    )}
+                        )}
                     </div>
 
                     <div className="p-4 border-t border-zinc-700 text-xs text-zinc-500 flex justify-between items-center">
@@ -155,7 +197,7 @@ function Dashboard() {
             </div>
 
             {isModalOpen && (
-                <NewSessionModal onCreateRoom={handleCreateRoom} onClose={() => (setModalOpen(false))} />
+                <NewSessionModal onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} onClose={() => (setModalOpen(false))} />
             )}
         </div>
     )

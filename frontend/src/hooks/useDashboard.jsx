@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react"
-import { createRoom, getAllRooms } from "../services/api"
+import { createRoom, getAllRooms, joinRoom } from "../services/api"
 
 export function useDashboard() {
     const [seed, setSeed] = useState("");
     const [myRooms, setMyRooms] = useState([]) // Stores a list of disctionaries
+    const [requestedRooms, setRequestedRooms] = useState([])
     const [displayName, setDisplayName] = useState("");
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
@@ -66,13 +67,30 @@ export function useDashboard() {
         }
     }
 
+    async function handleJoinRoom(formData) {
+        try {
+            const data = await joinRoom(formData.room_code);
+
+            let copyOfRequestedRooms = [...requestedRooms];
+            copyOfRequestedRooms.push(data);
+            setRequestedRooms(copyOfRequestedRooms);
+            setSuccess(`Request sent to '${formData.room_code}'`)
+        } catch (err) {
+            setError(err.message || "An error occured")
+        } finally {
+
+        }
+    }
+
     return {
         myRooms,
+        requestedRooms,
         sidebarLoading,
         error,
         success,
         displayName,
         seed,
-        handleCreateRoom
+        handleCreateRoom,
+        handleJoinRoom
     }
 }
