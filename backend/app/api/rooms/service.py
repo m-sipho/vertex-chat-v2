@@ -181,7 +181,7 @@ class RoomManager:
             "status": "pending",
             "room_code": room_code,
             "title": room['title'],
-            "message": f"Request sent to {room['title']}"
+            "message": f"Request sent to '{room['title']}'"
         }
     
 
