@@ -77,3 +77,9 @@ export async function getAllRooms() {
         method: "GET",
     })
 }
+
+export async function getAllRequestRooms() {
+    return apiClient("/rooms/pending", () => sessionStorage.getItem("token"), {
+        method: "GET",
+    })
+}
