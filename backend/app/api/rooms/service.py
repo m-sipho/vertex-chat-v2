@@ -177,7 +177,12 @@ class RoomManager:
         
         # Put them in the waiting room
         room['pending_users'][user.id] = user
-        return {"status": "pending", "room_code": room_code, "message": "Waiting for host approval"}
+        return {
+            "status": "pending",
+            "room_code": room_code,
+            "title": room['title'],
+            "message": "Waiting for host approval"
+        }
     
 
     async def approve_user(self, host_id, room_code, target_username):
