@@ -90,7 +90,7 @@ class RequestConnectionManager:
     async def notify_request_removed(self, room_owner_id: str, request_id: str, action: str):
         """Notify room owner that a request was handled"""
         message = {
-            "type": "request removed",
+            "type": "request_removed",
             "request_id": request_id,
             "action": action
         }
