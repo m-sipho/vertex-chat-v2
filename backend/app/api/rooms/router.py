@@ -141,6 +141,11 @@ async def get_all_rooms_in(current_user: Annotated[UserData, Depends(get_current
     result = await global_manager.get_all_rooms_in(current_user.id)
     return result
 
+@router.get("/rooms/pending")
+async def get_all_rooms_pending_in(current_user: Annotated[UserData, Depends(get_current_user)]):
+    result = await global_manager.get_all_rooms_pending_in(current_user.id)
+    return result
+
 
 # REQUEST WEBSOCKET
 @router.websocket("/ws/requests")

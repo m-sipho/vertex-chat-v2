@@ -335,6 +335,19 @@ class RoomManager:
         return found_rooms
     
 
+    async def get_all_rooms_pending_in(self, user_id: uuid.UUID):
+        """Logic to get all rooms where user with user_id is pending"""
+        found_rooms = []
+
+        for room_code, room_details in list(self._active_rooms.items()):
+            if user_id in room_details['pending_users']:
+                room_details["role"] = 'member'
+                room_details['room_code'] = room_code
+                found_rooms.append(room_details)
+        
+        return found_rooms
+    
+
     async def get_pending_requests_for_user(self, user_id: uuid.UUID):
         """Get all pending requests for rooms they own"""
         pending_requests = []
