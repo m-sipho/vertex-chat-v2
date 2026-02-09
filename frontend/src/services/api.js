@@ -23,7 +23,7 @@ export async function apiClient(endpoint, getToken, options = {}) {
 
     if (!response.ok) {
         const error = await response.json().catch(() => {});
-        throw new Error(error.detail || "Request failed")
+        throw new Error(error.detail || error.message || "Request failed")
     }
 
     // Check if there's no content
@@ -60,6 +60,15 @@ export async function registerUser(username, password, display_name = undefined)
 export async function createRoom(title) {
     return apiClient(`/create-room?title=${encodeURIComponent(title)}`, () => (sessionStorage.getItem("token")), {
         method: "POST",
+    })
+}
+
+export async function joinRoom(room_code) {
+    return apiClient("/join-room", () => (sessionStorage.getItem("token")), {
+        method: "POST",
+        body: JSON.stringify({
+            room_code
+        })
     })
 }
 
