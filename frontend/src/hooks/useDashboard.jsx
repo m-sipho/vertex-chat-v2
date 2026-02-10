@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { createRoom, getAllRooms, joinRoom, getAllRequestRooms } from "../services/api"
 
 export function useDashboard() {
@@ -9,6 +9,9 @@ export function useDashboard() {
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
     const [sidebarLoading, setSidebarLoading] = useState(false);
+    const [pendingRequests, setPendingRequests] = useState({});
+    const [joinRequestSent, setJoinRequestSent] = useState({});
+    const [token, setToken] = useState("");
 
     
     useEffect(() => {
@@ -18,6 +21,7 @@ export function useDashboard() {
             try {
                 setDisplayName(sessionStorage.getItem("display_name"))
                 setSeed(sessionStorage.getItem("avatar_seed"))
+                setToken(sessionStorage.getItem("token"))
 
                 const data = await getAllRooms();
                 setMyRooms(data);
@@ -26,7 +30,7 @@ export function useDashboard() {
                 setRequestedRooms(requests)
                 setSuccess("Room(s) loaded successfully.")
             } catch(err) {
-                setError("Failed to fetch data", err)
+                setError("Failed to fetch data", err);
             } finally {
                 setSidebarLoading(false);
             }
@@ -85,7 +89,24 @@ export function useDashboard() {
         }
     }
 
+    // Handle incoming join request for hosts
+    const handleNewRequests = useCallback((request) => {
+        setPendingRequests(prev => {
+            // Copy the old data
+            const newState = {...prev};
+
+            // Add the new request using the ID as the key
+            newState[request.user_id] = request;
+
+            return newState
+        });
+
+        setSuccess(`New request from ${request.display_name} to join "${request.room_title}"`)
+    }, []);
+
+
     return {
+        token,
         myRooms,
         requestedRooms,
         sidebarLoading,
@@ -93,7 +114,9 @@ export function useDashboard() {
         success,
         displayName,
         seed,
+        pendingRequests,
         handleCreateRoom,
-        handleJoinRoom
+        handleJoinRoom,
+        handleNewRequests
     }
 }
