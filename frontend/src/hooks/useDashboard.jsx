@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
-import { createRoom, getAllRooms, joinRoom, getAllRequestRooms } from "../services/api"
+import { createRoom, getAllRooms, joinRoom, getAllRequestRooms, getAllPendingRequests } from "../services/api"
 
 export function useDashboard() {
     const [seed, setSeed] = useState("");
@@ -28,6 +28,9 @@ export function useDashboard() {
 
                 const requests = await getAllRequestRooms();
                 setRequestedRooms(requests)
+
+                const hostRequestsPending = await getAllPendingRequests();
+                setPendingRequests(hostRequestsPending);
                 setSuccess("Room(s) loaded successfully.")
             } catch(err) {
                 setError("Failed to fetch data", err);

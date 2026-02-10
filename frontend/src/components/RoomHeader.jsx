@@ -32,7 +32,7 @@ function RoomHeader({ room, pendingRequests }) {
                                                 <div key={request.user_id} className='p-3 border-b border-zinc-800/50 last:border-b-0 flex items-center justify-between gap-3 hover:bg-zinc-800/50 transition'>
                                                     <div className='flex-1 min-w-0'>
                                                         <p className='text-sm font-medium text-white truncate'>{request.display_name}</p>
-                                                        <p className='text-[10px] text-zinc-500'>User ID: {request.user_id.slice(0, 8)}...</p>
+                                                        <p className='text-[10px] text-zinc-500'>User ID: {request.user_id ? request.user_id.slice(0, 8) : request.id.slice(0, 8)}...</p>
                                                     </div>
 
                                                     <div className='flex gap-2 flex-shrink-0'>
