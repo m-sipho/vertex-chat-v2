@@ -3,15 +3,20 @@ import { useState } from "react"
 import NewSessionModal from "../modals/NewSessionModal"
 import RoomHeader from "../components/RoomHeader"
 import { useDashboard } from "../hooks/useDashboard"
+import { useRequestNotifications } from "../hooks/useRequestNotifications"
 
 function Dashboard() {
     
-    const { myRooms, requestedRooms, sidebarLoading, error, success, displayName, seed, handleCreateRoom, handleJoinRoom} = useDashboard();
+    const { token, myRooms, requestedRooms, sidebarLoading, error, success, displayName, seed, pendingRequests, handleCreateRoom, handleJoinRoom, handleNewRequests } = useDashboard();
     const [isModalOpen, setModalOpen] = useState(false);
     const [isRoomOpen, setIsRoomOpen] = useState(false);
     const [selectedRoom, setSelectedRoom] = useState(null);
-    const [pendingRequests, setPendingRequests] = useState({});
-    const [joinRequestSent, setJoinRequestSent] = useState({});
+
+    useRequestNotifications(
+        token,
+        handleNewRequests
+    )
+    
 
     return (
         <div>
@@ -154,7 +159,7 @@ function Dashboard() {
                                 </button>
                             </div>
                             <div className="flex-1">
-                                <RoomHeader room={selectedRoom} />
+                                <RoomHeader room={selectedRoom} pendingRequests={pendingRequests} />
                             </div>
                         </div>
                     )}
