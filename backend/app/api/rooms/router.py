@@ -42,7 +42,7 @@ async def join(request: JoinLeaveRequest, current_user: Annotated[UserData, Depe
         request_data = {
             "room_code": request.room_code,
             "room_title": room_state.get("title"),
-            "user_id": current_user.id,
+            "user_id": str(current_user.id),
             "display_name": current_user.display_name,
             "status": "pending"
         }
