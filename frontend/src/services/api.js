@@ -83,3 +83,10 @@ export async function getAllRequestRooms() {
         method: "GET",
     })
 }
+
+// For the room owner
+export async function getAllPendingRequests() {
+    return apiClient("/pending-requests", () => sessionStorage.getItem("token"), {
+        method: "GET",
+    })
+}
