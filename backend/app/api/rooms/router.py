@@ -37,7 +37,7 @@ async def join(request: JoinLeaveRequest, current_user: Annotated[UserData, Depe
 
     timestamp = datetime.now(timezone.utc).isoformat() + "Z",
 
-    results = await global_manager.request_to_join_room(UserData(display_name=current_user.display_name, id=current_user.id, request_time=str(timestamp)), request.room_code)
+    results = await global_manager.request_to_join_room(UserData(display_name=current_user.display_name, id=current_user.id, request_time=str(timestamp[0])), request.room_code)
 
     # Get room info to send notification
     room_state = await global_manager.get_room_state(request.room_code)
