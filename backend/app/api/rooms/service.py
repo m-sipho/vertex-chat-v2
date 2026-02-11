@@ -12,6 +12,7 @@ from app.core.exceptions import (
 )
 from typing import Optional
 import uuid
+from datetime import datetime
 
 
 class RoomManager:
@@ -352,11 +353,16 @@ class RoomManager:
         """Get all pending requests for rooms they own"""
         pending_requests = []
 
-        for _, room_details in list(self._active_rooms.items()):
+        for room_code, room_details in list(self._active_rooms.items()):
             room_details_copy = room_details.copy()
             if room_details_copy['host_id'] == user_id:
                 for _, user_obj in (room_details_copy['pending_users'].items()):
-                    pending_requests.append(user_obj)
+                    pending_requests.append({
+                        "display_name": str(user_obj.display_name),
+                        "id": str(user_obj.id),
+                        "room_code": room_code,
+                        "timestamp": str(user_obj.request_time)
+                    })
 
         return pending_requests
 
