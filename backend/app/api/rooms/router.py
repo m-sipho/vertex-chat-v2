@@ -34,7 +34,10 @@ async def join(request: JoinLeaveRequest, current_user: Annotated[UserData, Depe
     - Adds the request to pending requests
     - Send real time notification to room owner via WebSocket
     """
-    results = await global_manager.request_to_join_room(UserData(display_name=current_user.display_name, id=current_user.id), request.room_code)
+
+    timestamp = datetime.now(timezone.utc).isoformat() + "Z",
+
+    results = await global_manager.request_to_join_room(UserData(display_name=current_user.display_name, id=current_user.id, request_time=str(timestamp)), request.room_code)
 
     # Get room info to send notification
     room_state = await global_manager.get_room_state(request.room_code)
@@ -44,6 +47,7 @@ async def join(request: JoinLeaveRequest, current_user: Annotated[UserData, Depe
             "room_title": room_state.get("title"),
             "user_id": str(current_user.id),
             "display_name": current_user.display_name,
+            "timestamp": timestamp,
             "status": "pending"
         }
 
