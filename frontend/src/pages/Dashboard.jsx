@@ -1,5 +1,5 @@
 import { User, Plus, Hash, LogOut, MessageCircleMore, Users, Loader, Settings, ArrowLeft, Paperclip, Send } from "lucide-react"
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import NewSessionModal from "../modals/NewSessionModal"
 import RoomHeader from "../components/RoomHeader"
 import { useDashboard } from "../hooks/useDashboard"
@@ -11,11 +11,71 @@ function Dashboard() {
     const [isModalOpen, setModalOpen] = useState(false);
     const [isRoomOpen, setIsRoomOpen] = useState(false);
     const [selectedRoom, setSelectedRoom] = useState(null);
+    const [lastSeenConfig, setLastSeenConfig] = useState(() => {
+        const saved = sessionStorage.getItem("lastSeenConfig");
+
+        return saved ? JSON.parse(saved) : {}
+    });
 
     useRequestNotifications(
         token,
         handleNewRequests
     )
+
+    function handleCloseRoom(room) {
+        setSelectedRoom(null);
+        setIsRoomOpen(false);
+
+        // Mark as read by saving the current time
+        const now = new Date().toISOString();
+
+        const updatedLastSeen = {
+            ...lastSeenConfig,
+            [room.room_code]: now
+        };
+
+        // Set last seen
+        setLastSeenConfig(updatedLastSeen);
+
+        // Save to persist on refresh
+        sessionStorage.setItem("lastSeenConfig", JSON.stringify(updatedLastSeen))
+    }
+
+    function handleOpenRoom(room) {
+        setSelectedRoom(room);
+        setIsRoomOpen(true);
+
+        // Mark as read by saving the current time
+        const now = new Date().toISOString();
+
+        const updatedLastSeen = {
+            ...lastSeenConfig,
+            [room.room_code]: now
+        };
+
+        // Set last seen
+        setLastSeenConfig(updatedLastSeen);
+
+        // Save to persist on refresh
+        sessionStorage.setItem("lastSeenConfig", JSON.stringify(updatedLastSeen))
+    }
+
+    const unreadCounts = useMemo(() => {
+        // Structure: {"room_A: 2", "room_B": 1}
+        const counts = {}
+        console.log("PENDING REQUESTS:", pendingRequests);
+        Object.values(pendingRequests).forEach(request => {
+            const lastViewed = lastSeenConfig[request.room_code] || "0";
+
+            // Only count it if it's newer than last visit
+            console.log(`DEBUG: request.timestamp = ${request.timestamp} and lastViewed = ${lastViewed}`)
+            if (request.timestamp > lastViewed) {
+                counts[request.room_code] = (counts[request.room_code] || 0) + 1;
+            }
+        });
+
+        return counts
+    }, [pendingRequests, lastSeenConfig])
     
 
     return (
@@ -57,33 +117,37 @@ function Dashboard() {
                                     <span className="text-[10px] font-bold text-zinc-500 tracking-widest">ACTIVE ROOM(S)</span>
                                 </div>
 
-                                {myRooms.map(myRoom => (
-                                    <div onClick={() => { setSelectedRoom(myRoom); setIsRoomOpen(true); }} key={myRoom.room_code} className={`cursor-pointer py-3 px-3 rounded-lg transition flex flex-col gap-2 group mb-2 mx-2 hover:bg-zinc-700/70 ${isRoomOpen && selectedRoom?.room_code === myRoom.room_code ? 'bg-zinc-700/70' : 'bg-zinc-900/50'}`}>
-                                        <div className="flex items-center gap-2.5 overflow-hidden w-full">
-                                            <Hash size={16} className="text-indigo-400 flex-shrink-0" />
-                                            <div className="flex-1 min-w-0 truncate text-white">
-                                                <span className="text-sm font-medium text-zinc-100">{myRoom.title}</span>
+                                {myRooms.map(myRoom => {
+                                    const unread = unreadCounts[myRoom.room_code] || 0
+                                    return (
+                                        <div onClick={() => handleOpenRoom(myRoom)} key={myRoom.room_code} className={`cursor-pointer py-3 px-3 rounded-lg transition flex flex-col gap-2 group mb-2 mx-2 hover:bg-zinc-700/70 ${isRoomOpen && selectedRoom?.room_code === myRoom.room_code ? 'bg-zinc-700/70' : 'bg-zinc-900/50'} ${unread > 0 && !isRoomOpen ? 'border-l-3 border-indigo-400' : ''}`}>
+                                            <div className="flex items-center gap-2.5 overflow-hidden w-full">
+                                                <Hash size={16} className="text-indigo-400 flex-shrink-0" />
+                                                <div className="flex-1 min-w-0 truncate text-white">
+                                                    <span className="text-sm font-medium text-zinc-100">{myRoom.title}</span>
+                                                </div>
+                                                <span className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 flex-shrink-0">
+                                                    {myRoom.room_code}
+                                                </span>
                                             </div>
-                                            <span className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 flex-shrink-0">
-                                                {myRoom.room_code}
-                                            </span>
+                                            
+                                            <div className="flex items-center justify-between gap-1.5 text-xs text-zinc-400 ml-[22px]">
+                                                {myRoom.members_length > 1 ? (
+                                                    <div className="flex gap-2">
+                                                        <Users size={13} className="text-indigo-400/60 flex-shrink-0" />
+                                                        <span>{myRoom.members_length} members</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex gap-2">
+                                                        <User size={13} className="text-indigo-400/60 flex-shrink-0" />
+                                                        <span>Only you</span>
+                                                    </div>
+                                                )}
+                                                {unread > 0 && !isRoomOpen && <span className='bg-indigo-600 text-white px-1.5 rounded-full text-[10px]'>{unread}</span>}
+                                            </div>
                                         </div>
-                                        
-                                        <div className="flex items-center gap-1.5 text-xs text-zinc-400 ml-[22px]">
-                                            {myRoom.members_length > 1 ? (
-                                                <>
-                                                    <Users size={13} className="text-indigo-400/60 flex-shrink-0" />
-                                                    <span>{myRoom.members_length} members</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <User size={13} className="text-indigo-400/60 flex-shrink-0" />
-                                                    <span>Only you</span>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
 
@@ -154,7 +218,7 @@ function Dashboard() {
                     {isRoomOpen && (
                         <div className="fade-out h-16 w-full px-6 py-4 bg-zinc-800 border-b border-zinc-700 flex items-center justify-between gap-3">
                             <div>
-                                <button onClick={() => { setIsRoomOpen(false); setSelectedRoom(null); }} className="text-sm text-zinc-400 hover:text-zinc-200">
+                                <button onClick={() => handleCloseRoom(selectedRoom)} className="text-sm text-zinc-400 hover:text-zinc-200">
                                     <ArrowLeft />
                                 </button>
                             </div>
