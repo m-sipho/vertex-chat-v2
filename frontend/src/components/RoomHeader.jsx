@@ -14,7 +14,7 @@ function RoomHeader({ room, pendingRequests, onApprove }) {
                     <div className='uppercase text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'>{room.role}</div>
                 </div>
                 {room && (
-                    <div className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 flex-shrink-0 w-min">
+                    <div className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 shrink-0 w-min">
                         {room.room_code}
                     </div>
                 )}
@@ -42,7 +42,7 @@ function RoomHeader({ room, pendingRequests, onApprove }) {
                                                         <p className='text-[10px] text-zinc-500'>User ID: {request.user_id ? request.user_id.slice(0, 8) : request.id.slice(0, 8)}...</p>
                                                     </div>
 
-                                                    <div className='flex gap-2 flex-shrink-0'>
+                                                    <div className='flex gap-2 shrink-0'>
                                                         <button onClick={() => onApprove(request)} className='p-1.5 border border-zinc-500 rounded transition disabled:opacity-50' title='approve'>
                                                             <Check className='text-emerald-600 hover:text-emerald-700' size={14} />
                                                         </button>

@@ -122,24 +122,24 @@ function Dashboard() {
                                     return (
                                         <div onClick={() => handleOpenRoom(myRoom)} key={myRoom.room_code} className={`cursor-pointer py-3 px-3 rounded-lg transition flex flex-col gap-2 group mb-2 mx-2 hover:bg-zinc-700/70 ${isRoomOpen && selectedRoom?.room_code === myRoom.room_code ? 'bg-zinc-700/70' : 'bg-zinc-900/50'} ${unread > 0 && !isRoomOpen ? 'border-l-3 border-indigo-400' : ''}`}>
                                             <div className="flex items-center gap-2.5 overflow-hidden w-full">
-                                                <Hash size={16} className="text-indigo-400 flex-shrink-0" />
+                                                <Hash size={16} className="text-indigo-400 shrink-0" />
                                                 <div className="flex-1 min-w-0 truncate text-white">
                                                     <span className="text-sm font-medium text-zinc-100">{myRoom.title}</span>
                                                 </div>
-                                                <span className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 flex-shrink-0">
+                                                <span className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 shrink-0">
                                                     {myRoom.room_code}
                                                 </span>
                                             </div>
                                             
-                                            <div className="flex items-center justify-between gap-1.5 text-xs text-zinc-400 ml-[22px]">
+                                            <div className="flex items-center justify-between gap-1.5 text-xs text-zinc-400 ml-5.5">
                                                 {myRoom.members_size > 1 ? (
                                                     <div className="flex gap-2">
-                                                        <Users size={13} className="text-indigo-400/60 flex-shrink-0" />
+                                                        <Users size={13} className="text-indigo-400/60 shrink-0" />
                                                         <span>{myRoom.members_size} members</span>
                                                     </div>
                                                 ) : (
                                                     <div className="flex gap-2">
-                                                        <User size={13} className="text-indigo-400/60 flex-shrink-0" />
+                                                        <User size={13} className="text-indigo-400/60 shrink-0" />
                                                         <span>Only you</span>
                                                     </div>
                                                 )}
@@ -161,16 +161,16 @@ function Dashboard() {
                                 {requestedRooms.map(room => (
                                     <div  key={room.room_code} className={`pointer-events-none py-3 px-3 rounded-lg transition flex flex-col gap-2 group mb-2 mx-2 bg-zinc-900/20 border border-zinc-800/50 opacity-70 cursor-not-allowed select-none`}>
                                         <div className="flex items-center gap-2.5 overflow-hidden w-full">
-                                            <Hash size={16} className="text-zinc-500 flex-shrink-0" />
+                                            <Hash size={16} className="text-zinc-500 shrink-0" />
                                             <div className="flex-1 min-w-0 truncate text-white">
                                                 <span className="text-sm font-medium text-zinc-400">{room.title}</span>
                                             </div>
-                                            <span className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 flex-shrink-0">
+                                            <span className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 shrink-0">
                                                 {room.room_code}
                                             </span>
                                         </div>
                                         
-                                        <div className="flex items-center gap-1.5 text-xs text-zinc-400 ml-[22px]">
+                                        <div className="flex items-center gap-1.5 text-xs text-zinc-400 ml-5.5">
                                             <span>Pending</span>
                                         </div>
                                     </div>
@@ -254,7 +254,7 @@ function Dashboard() {
 
                                         <input type="text" placeholder="Write a message..." className="flex-1 bg-transparent outline-none border-none focus:outline-none focus:ring-0 text-white" />
 
-                                        <button type="submit" className="w-9 h-9 flex items-center justify-center text-white rounded transition hover:bg-zinc-700 rounded-4xl p-2">
+                                        <button type="submit" className="w-9 h-9 flex items-center justify-center text-white rounded transition hover:bg-zinc-700 p-2">
                                             <Send />
                                         </button>
                                     </form>
