@@ -90,3 +90,13 @@ export async function getAllPendingRequests() {
         method: "GET",
     })
 }
+
+export async function approveUser(roomCode, targetUsername) {
+    return apiClient("/approve", () => sessionStorage.getItem("token"), {
+        method: "POST",
+        body: JSON.stringify({
+            room_code: roomCode,
+            target_username: targetUsername,
+        })
+    });
+}
