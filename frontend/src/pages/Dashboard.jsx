@@ -7,7 +7,7 @@ import { useRequestNotifications } from "../hooks/useRequestNotifications"
 
 function Dashboard() {
     
-    const { token, myRooms, requestedRooms, sidebarLoading, error, success, displayName, seed, pendingRequests, handleCreateRoom, handleJoinRoom, handleNewRequests } = useDashboard();
+    const { token, myRooms, requestedRooms, sidebarLoading, error, success, displayName, seed, pendingRequests, handleCreateRoom, handleJoinRoom, handleNewRequests, handleApprove } = useDashboard();
     const [isModalOpen, setModalOpen] = useState(false);
     const [isRoomOpen, setIsRoomOpen] = useState(false);
     const [selectedRoom, setSelectedRoom] = useState(null);
@@ -132,10 +132,10 @@ function Dashboard() {
                                             </div>
                                             
                                             <div className="flex items-center justify-between gap-1.5 text-xs text-zinc-400 ml-[22px]">
-                                                {myRoom.members_length > 1 ? (
+                                                {myRoom.members_size > 1 ? (
                                                     <div className="flex gap-2">
                                                         <Users size={13} className="text-indigo-400/60 flex-shrink-0" />
-                                                        <span>{myRoom.members_length} members</span>
+                                                        <span>{myRoom.members_size} members</span>
                                                     </div>
                                                 ) : (
                                                     <div className="flex gap-2">
@@ -223,7 +223,7 @@ function Dashboard() {
                                 </button>
                             </div>
                             <div className="flex-1">
-                                <RoomHeader room={selectedRoom} pendingRequests={pendingRequests} />
+                                <RoomHeader room={selectedRoom} pendingRequests={pendingRequests} onApprove={handleApprove} />
                             </div>
                         </div>
                     )}

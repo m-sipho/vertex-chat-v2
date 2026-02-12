@@ -1,7 +1,7 @@
 import { Clock9, LogOut, Check, X } from 'lucide-react';
 import { useState } from 'react';
 
-function RoomHeader({ room, pendingRequests }) {
+function RoomHeader({ room, pendingRequests, onApprove }) {
 
     const [isRequestsOpen, setRequestsOpen] = useState(false);
     const requestCount = Object.keys(pendingRequests).length;
@@ -9,8 +9,15 @@ function RoomHeader({ room, pendingRequests }) {
     return (
         <div className="flex items-center justify-between">
             <div className="">
-                <div className="text-md font-medium text-white truncate">{room ? room.title : 'No room selected'}</div>
-                {room && <div className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 flex-shrink-0 w-min">{room.room_code}</div>}
+                <div className='flex items-center gap-3'>
+                    <div className="text-md font-medium text-white truncate">{room ? room.title : 'No room selected'}</div>
+                    <div className='uppercase text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'>{room.role}</div>
+                </div>
+                {room && (
+                    <div className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 flex-shrink-0 w-min">
+                        {room.room_code}
+                    </div>
+                )}
             </div>
             <div className='flex gap-8'>
                 {room && room.role == "host" && (
@@ -36,7 +43,7 @@ function RoomHeader({ room, pendingRequests }) {
                                                     </div>
 
                                                     <div className='flex gap-2 flex-shrink-0'>
-                                                        <button className='p-1.5 border border-zinc-500 rounded transition disabled:opacity-50' title='approve'>
+                                                        <button onClick={() => onApprove(request)} className='p-1.5 border border-zinc-500 rounded transition disabled:opacity-50' title='approve'>
                                                             <Check className='text-emerald-600 hover:text-emerald-700' size={14} />
                                                         </button>
                                                         <button className='p-1.5 border border-zinc-500 text-white rounded transition disabled:opacity-50' title='Reject'>

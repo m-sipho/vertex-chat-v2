@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react"
-import { createRoom, getAllRooms, joinRoom, getAllRequestRooms, getAllPendingRequests } from "../services/api"
+import { createRoom, getAllRooms, joinRoom, getAllRequestRooms, getAllPendingRequests, approveUser } from "../services/api"
 
 export function useDashboard() {
     const [seed, setSeed] = useState("");
-    const [myRooms, setMyRooms] = useState([]) // Stores a list of disctionaries
-    const [requestedRooms, setRequestedRooms] = useState([])
+    const [myRooms, setMyRooms] = useState([]); // Stores a list of dictionaries
+    const [requestedRooms, setRequestedRooms] = useState([]);
     const [displayName, setDisplayName] = useState("");
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
@@ -108,6 +108,32 @@ export function useDashboard() {
     }, []);
 
 
+    async function handleApprove(request) {
+        const previousRequests = {...pendingRequests};
+        
+        setPendingRequests(prev => {
+            const updated = {...prev};
+            const requestToRemove = Object.keys(updated).find(
+                key => updated[key].user_id === request.user_id &&
+                updated[key].room_code === request.room_code
+            );
+
+            if (requestToRemove) {
+                delete updated[requestToRemove];
+                return updated;
+            }
+        });
+
+        try {
+            await approveUser(request.room_code, request.display_name);
+        } catch (err) {
+            // Rollback if failed
+            setPendingRequests(previousRequests);
+            setError("Failed to approve user. Please try again.");
+        }
+    }
+
+
     return {
         token,
         myRooms,
@@ -120,6 +146,7 @@ export function useDashboard() {
         pendingRequests,
         handleCreateRoom,
         handleJoinRoom,
-        handleNewRequests
+        handleNewRequests,
+        handleApprove
     }
 }
