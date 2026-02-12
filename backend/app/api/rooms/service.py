@@ -36,7 +36,8 @@ class RoomManager:
         #                 'type': system,
         #                 'message': 'host joined the room'
         #             }
-        #         ]
+        #         ],
+        #         'members_size': 1
         #     }
         # }
         self._active_rooms = {}
@@ -92,14 +93,15 @@ class RoomManager:
                         host.id: host 
                     },
                     'pending_users': {},
-                    'message_history': []
+                    'message_history': [],
+                    'members_size': 1
                 }
                 return {
                     "status": "success",
                     "room_code": code,
                     "title": title,
                     "role": "host",
-                    "members_length": self._active_rooms[code]['active_users'],
+                    "members_size": self._active_rooms[code]['members_size'],
                     "message": "Room created successfully."}
         raise NoAvailableRoomError("No available rooms")
     
@@ -209,6 +211,7 @@ class RoomManager:
         
 
         room['active_users'][user_to_approve.id] = user_to_approve
+        room['members_size'] += 1
         del room['pending_users'][user_to_approve.id]
         return {"status": "approved", "user_id": user_to_approve.id , "message": f"'{user_to_approve.display_name}' joined the room"}
     
