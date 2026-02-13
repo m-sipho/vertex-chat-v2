@@ -12,6 +12,7 @@ from app.core.exceptions import (
 )
 from typing import Optional
 import uuid
+from datetime import datetime
 
 
 class RoomManager:
@@ -35,7 +36,8 @@ class RoomManager:
         #                 'type': system,
         #                 'message': 'host joined the room'
         #             }
-        #         ]
+        #         ],
+        #         'members_size': 1
         #     }
         # }
         self._active_rooms = {}
@@ -56,7 +58,7 @@ class RoomManager:
         if len(title) > 30:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Length of title cannot be greater than 20"
+                detail="Length of title cannot be greater than 30"
             )
         
         if not host.display_name:
@@ -72,6 +74,25 @@ class RoomManager:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="You can only host up to one room."
                 )
+            
+        # Check if the user is in 2 rooms
+        count = 0
+        for _, room_details in list(self._active_rooms.items()):
+            # Check in active users
+            active_users_ids = [id for id in room_details['active_users']]
+            if host.id in active_users_ids:
+                count += 1
+
+            # Check in pending users
+            pending_users_ids = [id for id in room_details['pending_users']]
+            if host.id in pending_users_ids:
+                count += 1
+        
+        if count >= 2:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You cannot be in more than two rooms"
+            )
         
         # Check if title is valid
         if not title:
@@ -91,14 +112,15 @@ class RoomManager:
                         host.id: host 
                     },
                     'pending_users': {},
-                    'message_history': []
+                    'message_history': [],
+                    'members_size': 1
                 }
                 return {
                     "status": "success",
                     "room_code": code,
                     "title": title,
                     "role": "host",
-                    "members_length": self._active_rooms[code]['active_users'],
+                    "members_size": self._active_rooms[code]['members_size'],
                     "message": "Room created successfully."}
         raise NoAvailableRoomError("No available rooms")
     
@@ -177,7 +199,12 @@ class RoomManager:
         
         # Put them in the waiting room
         room['pending_users'][user.id] = user
-        return {"status": "pending", "message": "Waiting for host approval"}
+        return {
+            "status": "pending",
+            "room_code": room_code,
+            "title": room['title'],
+            "message": f"Request sent to '{room['title']}'"
+        }
     
 
     async def approve_user(self, host_id, room_code, target_username):
@@ -203,8 +230,9 @@ class RoomManager:
         
 
         room['active_users'][user_to_approve.id] = user_to_approve
+        room['members_size'] += 1
         del room['pending_users'][user_to_approve.id]
-        return {"status": "approved", "message": f"'{user_to_approve.display_name}' joined the room"}
+        return {"status": "approved", "user_id": user_to_approve.id , "message": f"'{user_to_approve.display_name}' joined the room"}
     
 
     async def reject_user(self, host_id, room_code, target_username):
@@ -229,7 +257,7 @@ class RoomManager:
             raise UserNotFoundError(f"'{target_username}' not found on waiting users")
         
         del room['pending_users'][user_to_reject.id]
-        return {"status": "removed", "message": f"'{target_username}' is rejected to join"}
+        return {"status": "removed", "user_id": user_to_reject.id, "message": f"'{target_username}' is rejected to join"}
     
 
     async def leave_room(self, user_id, room_code, new_host_id: Optional[uuid.UUID] = None):
@@ -328,4 +356,35 @@ class RoomManager:
                 found_rooms.append(room_details)
 
         return found_rooms
+    
+
+    async def get_all_rooms_pending_in(self, user_id: uuid.UUID):
+        """Logic to get all rooms where user with user_id is pending"""
+        found_rooms = []
+
+        for room_code, room_details in list(self._active_rooms.items()):
+            if user_id in room_details['pending_users']:
+                room_details["role"] = 'member'
+                room_details['room_code'] = room_code
+                found_rooms.append(room_details)
+        
+        return found_rooms
+    
+
+    async def get_pending_requests_for_user(self, user_id: uuid.UUID):
+        """Get all pending requests for rooms they own"""
+        pending_requests = []
+
+        for room_code, room_details in list(self._active_rooms.items()):
+            room_details_copy = room_details.copy()
+            if room_details_copy['host_id'] == user_id:
+                for _, user_obj in (room_details_copy['pending_users'].items()):
+                    pending_requests.append({
+                        "display_name": str(user_obj.display_name),
+                        "id": str(user_obj.id),
+                        "room_code": room_code,
+                        "timestamp": str(user_obj.request_time)
+                    })
+
+        return pending_requests
 

@@ -1,10 +1,11 @@
 import { X, Info, Users } from "lucide-react"
 import { useState } from "react"
 
-function NewSessionModal({ onCreateRoom, onClose }) {
-    const [isCreateClicked, setCreateClicked] = useState(true)
-    const [isJoinClicked, setJoinClicked] = useState(false)
-    const [roomName, setRoomName] = useState("")
+function NewSessionModal({ onCreateRoom, onJoinRoom, onClose }) {
+    const [isCreateClicked, setCreateClicked] = useState(true);
+    const [isJoinClicked, setJoinClicked] = useState(false);
+    const [roomName, setRoomName] = useState("");
+    const [roomCode, setRoomCode] = useState("");
 
     async function handleCreateSubmit(e) {
         e.preventDefault();
@@ -12,6 +13,14 @@ function NewSessionModal({ onCreateRoom, onClose }) {
         onClose();
 
         await onCreateRoom({title: roomName})
+    }
+
+    async function handleJoinSubmit(e) {
+        e.preventDefault();
+
+        onClose();
+
+        await onJoinRoom({"room_code": roomCode})
     }
 
     return (
@@ -55,7 +64,7 @@ function NewSessionModal({ onCreateRoom, onClose }) {
                         <div className="space-y-5">
                             <div>
                                 <label htmlFor="roomCode" className="text-xs font-medium text-zinc-400 mb-1.5">Room Code</label>
-                                <input type="text" className="w-full bg-black/20 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none transition placeholder-zinc-600" placeholder="e.g BH67g" required autoComplete="off" autoFocus />
+                                <input type="text" value={roomCode} onChange={e => (setRoomCode(e.target.value))} className="w-full bg-black/20 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none transition placeholder-zinc-600" placeholder="e.g BH67g" required autoComplete="off" autoFocus />
                             </div>
                             <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-lg p-3 flex gap-3 items-start">
                                 <Users className="text-emerald-500 mt-0.5 text-xs" size={13} />
@@ -64,7 +73,7 @@ function NewSessionModal({ onCreateRoom, onClose }) {
                                     <p className="text-[10px] text-emerald-300/70 mt-0.5">Join an existing room. Max 2 concurrent rooms.</p>
                                 </div>
                             </div>
-                            <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded font-medium text-sm cursor-pointer transition">Join Session</button>
+                            <button type="submit" onClick={handleJoinSubmit} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded font-medium text-sm cursor-pointer transition">Join Session</button>
                         </div>
                     )}
                 </div>

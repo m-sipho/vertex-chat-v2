@@ -1,73 +1,84 @@
 import { User, Plus, Hash, LogOut, MessageCircleMore, Users, Loader, Settings, ArrowLeft, Paperclip, Send } from "lucide-react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useMemo, useEffect } from "react"
 import NewSessionModal from "../modals/NewSessionModal"
-import { createRoom, getAllRooms } from "../services/api"
 import RoomHeader from "../components/RoomHeader"
+import { useDashboard } from "../hooks/useDashboard"
+import { useRequestNotifications } from "../hooks/useRequestNotifications"
 
 function Dashboard() {
-    const [seed, setSeed] = useState("");
-    const [myRooms, setMyRooms] = useState([]) // Stores a list of disctionaries
-    const [displayName, setDisplayName] = useState("");
+    
+    const { token, myRooms, requestedRooms, sidebarLoading, error, success, displayName, seed, pendingRequests, handleCreateRoom, handleJoinRoom, handleNewRequests, handleApprove, handleReject, fetchRooms, updatePendingRooms } = useDashboard();
     const [isModalOpen, setModalOpen] = useState(false);
-    const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(null);
-    const [sidebarLoading, setSidebarLoading] = useState(false);
     const [isRoomOpen, setIsRoomOpen] = useState(false);
     const [selectedRoom, setSelectedRoom] = useState(null);
+    const [lastSeenConfig, setLastSeenConfig] = useState(() => {
+        const saved = sessionStorage.getItem("lastSeenConfig");
 
-    useEffect(() => {
-        const fetchData = async () => {
+        return saved ? JSON.parse(saved) : {}
+    });
 
-            setSidebarLoading(true);
-            try {
-                setDisplayName(sessionStorage.getItem("display_name"))
-                setSeed(sessionStorage.getItem("avatar_seed"))
+    useRequestNotifications(
+        token,
+        handleNewRequests,
+        fetchRooms,
+        updatePendingRooms
+    )
 
-                const data = await getAllRooms();
-                setMyRooms(data);
-                setSuccess("Room(s) loaded successfully.")
-            } catch(err) {
-                setError("Failed to fetch data", err)
-            } finally {
-                setSidebarLoading(false);
-            }
-        }
-        fetchData();
-    }, [])
+    function handleCloseRoom(room) {
+        setSelectedRoom(null);
+        setIsRoomOpen(false);
 
-    //Show error/sucess for 4 seconds
-    useEffect(() => {
-        if (error) {
-            const timer = setTimeout(() => {
-                setError(null)
-            }, 4000)
+        // Mark as read by saving the current time
+        const now = new Date().toISOString();
 
-            return () => clearTimeout(timer);
-        } else if (success) {
-            const timer = setTimeout(() => {
-                setSuccess(null)
-            }, 2000)
+        const updatedLastSeen = {
+            ...lastSeenConfig,
+            [room.room_code]: now
+        };
 
-            return () => clearTimeout(timer);
-        }
-    }, [success, error])
+        // Set last seen
+        setLastSeenConfig(updatedLastSeen);
 
-    async function handleCreateRoom(formData) {
-        try {
-            const data = await createRoom(formData.title);
-
-            let copyOfMyRooms = [...myRooms];
-            copyOfMyRooms.push(data);
-            setMyRooms(copyOfMyRooms);
-            setSuccess("Room created successfully.")
-
-        } catch (err) {
-            console.error(err)
-            setError(`${err}`)
-        } finally {
-
-        }
+        // Save to persist on refresh
+        sessionStorage.setItem("lastSeenConfig", JSON.stringify(updatedLastSeen))
     }
+
+    function handleOpenRoom(room) {
+        setSelectedRoom(room);
+        setIsRoomOpen(true);
+
+        // Mark as read by saving the current time
+        const now = new Date().toISOString();
+
+        const updatedLastSeen = {
+            ...lastSeenConfig,
+            [room.room_code]: now
+        };
+
+        // Set last seen
+        setLastSeenConfig(updatedLastSeen);
+
+        // Save to persist on refresh
+        sessionStorage.setItem("lastSeenConfig", JSON.stringify(updatedLastSeen))
+    }
+
+    const unreadCounts = useMemo(() => {
+        // Structure: {"room_A: 2", "room_B": 1}
+        const counts = {}
+        console.log("PENDING REQUESTS:", pendingRequests);
+        Object.values(pendingRequests).forEach(request => {
+            const lastViewed = lastSeenConfig[request.room_code] || "0";
+
+            // Only count it if it's newer than last visit
+            console.log(`DEBUG: request.timestamp = ${request.timestamp} and lastViewed = ${lastViewed}`)
+            if (request.timestamp > lastViewed) {
+                counts[request.room_code] = (counts[request.room_code] || 0) + 1;
+            }
+        });
+
+        return counts
+    }, [pendingRequests, lastSeenConfig])
+    
 
     return (
         <div>
@@ -100,41 +111,85 @@ function Dashboard() {
 
                     {/* Room list */}
                     <div className="flex-1 flex flex-col overflow-y-auto px-3 py-2 space-y-1 gap-1">
+
+                        {myRooms && myRooms.length > 0 && (
+                            <div className="space-y-1">
+
+                                <div className="px-5 py-1">
+                                    <span className="text-[10px] font-bold text-zinc-500 tracking-widest">ACTIVE ROOM(S)</span>
+                                </div>
+
+                                {myRooms.map(myRoom => {
+                                    const unread = unreadCounts[myRoom.room_code] || 0
+                                    return (
+                                        <div onClick={() => handleOpenRoom(myRoom)} key={myRoom.room_code} className={`cursor-pointer py-3 px-3 rounded-lg transition flex flex-col gap-2 group mb-2 mx-2 hover:bg-zinc-700/70 ${isRoomOpen && selectedRoom?.room_code === myRoom.room_code ? 'bg-zinc-700/70' : 'bg-zinc-900/50'} ${unread > 0 && !isRoomOpen ? 'border-l-3 border-indigo-400' : ''}`}>
+                                            <div className="flex items-center gap-2.5 overflow-hidden w-full">
+                                                <Hash size={16} className="text-indigo-400 shrink-0" />
+                                                <div className="flex-1 min-w-0 truncate text-white">
+                                                    <span className="text-sm font-medium text-zinc-100">{myRoom.title}</span>
+                                                </div>
+                                                <span className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 shrink-0">
+                                                    {myRoom.room_code}
+                                                </span>
+                                            </div>
+                                            
+                                            <div className="flex items-center justify-between gap-1.5 text-xs text-zinc-400 ml-5.5">
+                                                {myRoom.members_size > 1 ? (
+                                                    <div className="flex gap-2">
+                                                        <Users size={13} className="text-indigo-400/60 shrink-0" />
+                                                        <span>{myRoom.members_size} members</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex gap-2">
+                                                        <User size={13} className="text-indigo-400/60 shrink-0" />
+                                                        <span>Only you</span>
+                                                    </div>
+                                                )}
+                                                {unread > 0 && !isRoomOpen && <span className='bg-indigo-600 text-white px-1.5 rounded-full text-[10px]'>{unread}</span>}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {requestedRooms && requestedRooms.length > 0 && (
+                            <div className="space-y-1">
+                                
+                                <div className={`px-5 py-1 ${myRooms.length > 0 ? 'border-t border-zinc-700': ''}`}>
+                                    <span className="text-[10px] font-bold text-zinc-500 tracking-widest">PENDING APPROVAL</span>
+                                </div>
+
+                                {requestedRooms.map(room => (
+                                    <div  key={room.room_code} className={`pointer-events-none py-3 px-3 rounded-lg transition flex flex-col gap-2 group mb-2 mx-2 bg-zinc-900/20 border border-zinc-800/50 opacity-70 cursor-not-allowed select-none`}>
+                                        <div className="flex items-center gap-2.5 overflow-hidden w-full">
+                                            <Hash size={16} className="text-zinc-500 shrink-0" />
+                                            <div className="flex-1 min-w-0 truncate text-white">
+                                                <span className="text-sm font-medium text-zinc-400">{room.title}</span>
+                                            </div>
+                                            <span className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 shrink-0">
+                                                {room.room_code}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-1.5 text-xs text-zinc-400 ml-5.5">
+                                            <span>Pending</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         {sidebarLoading ? (
                         <div className="flex text-white justify-center items-center">
                             <Loader className="animate-spin text-center" />
                         </div>
-                    ) : myRooms && myRooms.length > 0 ? (
-                        myRooms.map(myRoom => (
-                            <div onClick={() => { setSelectedRoom(myRoom); setIsRoomOpen(true); }} key={myRoom.room_code} className={`cursor-pointer py-3 px-3 rounded-lg transition flex flex-col gap-2 group mb-2 mx-2 hover:bg-zinc-700/70 ${isRoomOpen && selectedRoom?.room_code === myRoom.room_code ? 'bg-zinc-700/70' : 'bg-zinc-900/50'}`}>
-                                <div className="flex items-center gap-2.5 overflow-hidden w-full">
-                                    <Hash size={16} className="text-indigo-400 flex-shrink-0" />
-                                    <div className="flex-1 min-w-0 truncate text-white">
-                                        <span className="text-sm font-medium text-zinc-100">{myRoom.title}</span>
-                                    </div>
-                                    <span className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 flex-shrink-0">
-                                        {myRoom.room_code}
-                                    </span>
-                                </div>
-                                
-                                <div className="flex items-center gap-1.5 text-xs text-zinc-400 ml-[22px]">
-                                    {myRoom.members_length > 1 ? (
-                                        <>
-                                            <Users size={13} className="text-indigo-400/60 flex-shrink-0" />
-                                            <span>{myRoom.members_length} members</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <User size={13} className="text-indigo-400/60 flex-shrink-0" />
-                                            <span>Only you</span>
-                                        </>
-                                    )}
-                                </div>
+                        ) : myRooms.length == 0 && requestedRooms.length == 0 && (
+                            <div className="flex flex-col items-center justify-cente py-10 px-4 text-center">
+                                <p className="text-zinc-500 text-sm font-medium">No rooms yet</p>
+                                <p className="text-zinc-600 text-xs mt-1">Create or join a room to get started</p>
                             </div>
-                        ))
-                    ) : (
-                        <div className="text-zinc-500 text-center text-sm">No rooms yet</div>
-                    )}
+                        )}
                     </div>
 
                     <div className="p-4 border-t border-zinc-700 text-xs text-zinc-500 flex justify-between items-center">
@@ -165,12 +220,12 @@ function Dashboard() {
                     {isRoomOpen && (
                         <div className="fade-out h-16 w-full px-6 py-4 bg-zinc-800 border-b border-zinc-700 flex items-center justify-between gap-3">
                             <div>
-                                <button onClick={() => { setIsRoomOpen(false); setSelectedRoom(null); }} className="text-sm text-zinc-400 hover:text-zinc-200">
+                                <button onClick={() => handleCloseRoom(selectedRoom)} className="text-sm text-zinc-400 hover:text-zinc-200">
                                     <ArrowLeft />
                                 </button>
                             </div>
                             <div className="flex-1">
-                                <RoomHeader room={selectedRoom} />
+                                <RoomHeader room={selectedRoom} pendingRequests={pendingRequests} onApprove={handleApprove} onReject={handleReject} />
                             </div>
                         </div>
                     )}
@@ -201,7 +256,7 @@ function Dashboard() {
 
                                         <input type="text" placeholder="Write a message..." className="flex-1 bg-transparent outline-none border-none focus:outline-none focus:ring-0 text-white" />
 
-                                        <button type="submit" className="w-9 h-9 flex items-center justify-center text-white rounded transition hover:bg-zinc-700 rounded-4xl p-2">
+                                        <button type="submit" className="w-9 h-9 flex items-center justify-center text-white rounded-4xl transition hover:bg-zinc-700 p-2">
                                             <Send />
                                         </button>
                                     </form>
@@ -213,7 +268,7 @@ function Dashboard() {
             </div>
 
             {isModalOpen && (
-                <NewSessionModal onCreateRoom={handleCreateRoom} onClose={() => (setModalOpen(false))} />
+                <NewSessionModal onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} onClose={() => (setModalOpen(false))} />
             )}
         </div>
     )

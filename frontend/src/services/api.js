@@ -23,7 +23,7 @@ export async function apiClient(endpoint, getToken, options = {}) {
 
     if (!response.ok) {
         const error = await response.json().catch(() => {});
-        throw new Error(error.detail || "Request failed")
+        throw new Error(error.detail || error.message || "Request failed")
     }
 
     // Check if there's no content
@@ -63,8 +63,50 @@ export async function createRoom(title) {
     })
 }
 
+export async function joinRoom(room_code) {
+    return apiClient("/join-room", () => (sessionStorage.getItem("token")), {
+        method: "POST",
+        body: JSON.stringify({
+            room_code
+        })
+    })
+}
+
 export async function getAllRooms() {
     return apiClient("/rooms/user", () => sessionStorage.getItem("token"), {
         method: "GET",
     })
+}
+
+export async function getAllRequestRooms() {
+    return apiClient("/rooms/pending", () => sessionStorage.getItem("token"), {
+        method: "GET",
+    })
+}
+
+// For the room owner
+export async function getAllPendingRequests() {
+    return apiClient("/pending-requests", () => sessionStorage.getItem("token"), {
+        method: "GET",
+    })
+}
+
+export async function approveUser(roomCode, targetUsername) {
+    return apiClient("/approve", () => sessionStorage.getItem("token"), {
+        method: "POST",
+        body: JSON.stringify({
+            room_code: roomCode,
+            target_username: targetUsername,
+        })
+    });
+}
+
+export async function rejectUser(roomCode, targetUsername) {
+    return apiClient("/reject", () => sessionStorage.getItem("token"), {
+        method: "POST",
+        body: JSON.stringify({
+            room_code: roomCode,
+            target_username: targetUsername
+        })
+    });
 }
