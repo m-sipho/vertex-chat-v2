@@ -7,7 +7,7 @@ import { useRequestNotifications } from "../hooks/useRequestNotifications"
 
 function Dashboard() {
     
-    const { token, myRooms, requestedRooms, sidebarLoading, error, success, displayName, seed, pendingRequests, handleCreateRoom, handleJoinRoom, handleNewRequests, handleApprove, fetchRooms, updatePendingRooms } = useDashboard();
+    const { token, myRooms, requestedRooms, sidebarLoading, error, success, displayName, seed, pendingRequests, handleCreateRoom, handleJoinRoom, handleNewRequests, handleApprove, handleReject, fetchRooms, updatePendingRooms } = useDashboard();
     const [isModalOpen, setModalOpen] = useState(false);
     const [isRoomOpen, setIsRoomOpen] = useState(false);
     const [selectedRoom, setSelectedRoom] = useState(null);
@@ -225,7 +225,7 @@ function Dashboard() {
                                 </button>
                             </div>
                             <div className="flex-1">
-                                <RoomHeader room={selectedRoom} pendingRequests={pendingRequests} onApprove={handleApprove} />
+                                <RoomHeader room={selectedRoom} pendingRequests={pendingRequests} onApprove={handleApprove} onReject={handleReject} />
                             </div>
                         </div>
                     )}

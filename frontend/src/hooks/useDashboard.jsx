@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
-import { createRoom, getAllRooms, joinRoom, getAllRequestRooms, getAllPendingRequests, approveUser } from "../services/api"
+import { createRoom, getAllRooms, joinRoom, getAllRequestRooms, getAllPendingRequests, approveUser, rejectUser } from "../services/api"
 
 export function useDashboard() {
     const [seed, setSeed] = useState("");
@@ -149,6 +149,31 @@ export function useDashboard() {
         }
     }
 
+    async function handleReject(request) {
+        const previousRequests = {...pendingRequests};
+
+        setPendingRequests(prev => {
+            const updated = {...prev};
+            const requestToRemove = Object.keys(updated).find(
+                key => (updated[key].user_id === request.user_id || updated[key].id === request.id) &&
+                updated[key].room_code === request.room_code
+            );
+
+            if (requestToRemove) {
+                delete updated[requestToRemove];
+                return updated;
+            }
+        });
+
+        try {
+            await rejectUser(request.room_code, request.display_name)
+        } catch (err) {
+            // Rollback if failed
+            setPendingRequests(previousRequests);
+            setError("Failed to reject user. Please try again.", err);
+        }
+    }
+
 
     return {
         token,
@@ -164,6 +189,7 @@ export function useDashboard() {
         handleJoinRoom,
         handleNewRequests,
         handleApprove,
+        handleReject,
         fetchRooms,
         updatePendingRooms
     }

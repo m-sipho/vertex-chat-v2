@@ -31,6 +31,8 @@ export function useRequestNotifications(tokenValue, onRequestsReceived, onFetchR
                             await onUpdatePendingRequests();
                         } else if (data.type === "request_approved") {
                             await onUpdatePendingRequests()
+                        } else if (data.type === "request_rejected") {
+                            await onUpdatePendingRequests()
                         } else if (data.type === "request_removed") {
                             onFetchRooms();
                             onUpdatePendingRequests();

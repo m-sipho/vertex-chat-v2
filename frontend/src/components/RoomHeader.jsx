@@ -1,7 +1,7 @@
 import { Clock9, LogOut, Check, X } from 'lucide-react';
 import { useState } from 'react';
 
-function RoomHeader({ room, pendingRequests, onApprove }) {
+function RoomHeader({ room, pendingRequests, onApprove, onReject }) {
 
     const [isRequestsOpen, setRequestsOpen] = useState(false);
     const requestCount = Object.keys(pendingRequests).length;
@@ -46,7 +46,7 @@ function RoomHeader({ room, pendingRequests, onApprove }) {
                                                         <button onClick={() => onApprove(request)} className='p-1.5 border border-zinc-500 rounded transition disabled:opacity-50' title='approve'>
                                                             <Check className='text-emerald-600 hover:text-emerald-700' size={14} />
                                                         </button>
-                                                        <button className='p-1.5 border border-zinc-500 text-white rounded transition disabled:opacity-50' title='Reject'>
+                                                        <button onClick={() => onReject(request)} className='p-1.5 border border-zinc-500 text-white rounded transition disabled:opacity-50' title='Reject'>
                                                             <X className='text-rose-600 hover:text-rose-800' size={14} />
                                                         </button>
                                                     </div>
