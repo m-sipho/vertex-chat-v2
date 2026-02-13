@@ -95,3 +95,15 @@ class RequestConnectionManager:
             "action": action
         }
         await self.send_to_user(room_owner_id, message)
+
+    
+    async def broadcast_to_rooms(self, room_code: str, exclude_ids: list, all_members_ids: list):
+        """Send a signal to everyone in the room except the people whose ids are in exclude_ids list"""
+        message = {
+            'type': "broadcast",
+            'room_code': room_code
+        }
+
+        for user_id in all_members_ids:
+            if user_id not in exclude_ids:
+                await self.send_to_user(user_id, message)
