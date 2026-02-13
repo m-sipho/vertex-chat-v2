@@ -77,14 +77,27 @@ async def approve(request: ApproveRequest, current_user: Annotated[UserData, Dep
             room_title=room_state["title"]
         )
 
-    request_id = f"{status["user_id"]}_{request.room_code}"
+        request_id = f"{status["user_id"]}_{request.room_code}"
 
-    # Notify room owner that request is handled
-    await global_request_manager.notify_request_removed(
-        room_owner_id=current_user.id,
-        request_id=request_id,
-        action="approved"
-    )
+        # Notify room owner that request is handled
+        await global_request_manager.notify_request_removed(
+            room_owner_id=current_user.id,
+            request_id=request_id,
+            action="approved"
+        )
+
+        # Get all active members
+        members_info = room_state["active_users"]
+        if members_info:
+            all_members_ids = [id for id in members_info]
+        else:
+            all_members_ids = []
+        
+        await global_request_manager.broadcast_to_rooms(
+            room_code=request.room_code,
+            exclude_ids=[current_user.id, status["user_id"]],
+            all_members_ids=all_members_ids
+        )
 
     return status
 
