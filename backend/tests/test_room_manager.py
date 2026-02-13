@@ -146,3 +146,33 @@ async def test_garbage_collection_on_leave(manager, host):
     assert result['status'] == 'deleted'
     assert "Host left and room was empty" in result['message']
     assert room_code not in manager._active_rooms
+
+@pytest.mark.asyncio
+async def test_two_maximum_rooms(manager, host, thabang, banele):
+    room_1 = await manager.create_room("Chess Club", host)
+    room_code_1 = room_1['room_code']
+
+    room_2 = await manager.create_room("Planning", thabang)
+    room_code_2 = room_2['room_code']
+
+    # Banele requests to join room 1 and room 2
+    await manager.request_to_join_room(banele, room_code_1)
+    await manager.request_to_join_room(banele, room_code_2)
+
+    # Banele attempts to create a new room to host
+    with pytest.raises(HTTPException) as excinfo:
+        await manager.create_room("Banele's Room", banele)
+
+    assert excinfo.value.status_code == 400
+    assert str(excinfo.value.detail) == "You cannot be in more than two rooms"
+
+
+    # Host and Thabang approves Banele
+    await manager.approve_user(host.id, room_code_1, banele.display_name)
+    await manager.approve_user(thabang.id, room_code_2, banele.display_name)
+
+    with pytest.raises(HTTPException) as excinfo:
+        room_3 = await manager.create_room("Studying", banele)
+    
+    assert excinfo.value.status_code == 400
+    assert str(excinfo.value.detail) == "You cannot be in more than two rooms"
