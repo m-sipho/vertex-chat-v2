@@ -100,3 +100,13 @@ export async function approveUser(roomCode, targetUsername) {
         })
     });
 }
+
+export async function rejectUser(roomCode, targetUsername) {
+    return apiClient("/reject", () => sessionStorage.getItem("token"), {
+        method: "POST",
+        body: JSON.stringify({
+            room_code: roomCode,
+            target_username: targetUsername
+        })
+    });
+}
