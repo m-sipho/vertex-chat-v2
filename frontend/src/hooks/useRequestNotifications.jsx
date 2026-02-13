@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export function useRequestNotifications(tokenValue, onRequestsReceived) {
+export function useRequestNotifications(tokenValue, onRequestsReceived, onFetchRooms, onUpdatePendingRequests) {
     const wsRef = useRef(null);
     
     useEffect(() => {
@@ -21,13 +21,21 @@ export function useRequestNotifications(tokenValue, onRequestsReceived) {
                     console.log("Connected to request notifications");
                 }
 
-                wsRef.current.onmessage = function(event) {
+                wsRef.current.onmessage = async function(event) {
                     console.log("RAW DATA RECEIVED:", event.data)
                     try {
                         const data = JSON.parse(event.data);
 
                         if (data.type === "new_join_request" && onRequestsReceived) {
-                            onRequestsReceived(data.request);
+                            await onRequestsReceived(data.request);
+                            await onUpdatePendingRequests();
+                        } else if (data.type === "request_approved") {
+                            await onUpdatePendingRequests()
+                        } else if (data.type === "request_removed") {
+                            onFetchRooms();
+                            onUpdatePendingRequests();
+                        } else if (data.type === "broadcast") {
+                            await onUpdatePendingRequests()
                         }
                     } catch (err) {
                         console.log("Error parsing request notification:", err);

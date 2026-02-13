@@ -13,6 +13,22 @@ export function useDashboard() {
     const [joinRequestSent, setJoinRequestSent] = useState({});
     const [token, setToken] = useState("");
 
+
+    const fetchRooms = async () => {
+        const data = await getAllRooms();
+        setMyRooms(data);
+    }
+
+    const updatePendingRooms = async () => {
+        const [data, requests] = await Promise.all([
+            await getAllRooms(),
+            await getAllRequestRooms()
+        ]);
+
+        setMyRooms(data);
+        setRequestedRooms(requests);
+    }
+
     
     useEffect(() => {
         const fetchData = async () => {
@@ -114,7 +130,7 @@ export function useDashboard() {
         setPendingRequests(prev => {
             const updated = {...prev};
             const requestToRemove = Object.keys(updated).find(
-                key => updated[key].user_id === request.user_id &&
+                key => (updated[key].user_id === request.user_id || updated[key].id === request.id) &&
                 updated[key].room_code === request.room_code
             );
 
@@ -147,6 +163,8 @@ export function useDashboard() {
         handleCreateRoom,
         handleJoinRoom,
         handleNewRequests,
-        handleApprove
+        handleApprove,
+        fetchRooms,
+        updatePendingRooms
     }
 }

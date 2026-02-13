@@ -7,7 +7,7 @@ import { useRequestNotifications } from "../hooks/useRequestNotifications"
 
 function Dashboard() {
     
-    const { token, myRooms, requestedRooms, sidebarLoading, error, success, displayName, seed, pendingRequests, handleCreateRoom, handleJoinRoom, handleNewRequests, handleApprove } = useDashboard();
+    const { token, myRooms, requestedRooms, sidebarLoading, error, success, displayName, seed, pendingRequests, handleCreateRoom, handleJoinRoom, handleNewRequests, handleApprove, fetchRooms, updatePendingRooms } = useDashboard();
     const [isModalOpen, setModalOpen] = useState(false);
     const [isRoomOpen, setIsRoomOpen] = useState(false);
     const [selectedRoom, setSelectedRoom] = useState(null);
@@ -19,7 +19,9 @@ function Dashboard() {
 
     useRequestNotifications(
         token,
-        handleNewRequests
+        handleNewRequests,
+        fetchRooms,
+        updatePendingRooms
     )
 
     function handleCloseRoom(room) {
@@ -254,7 +256,7 @@ function Dashboard() {
 
                                         <input type="text" placeholder="Write a message..." className="flex-1 bg-transparent outline-none border-none focus:outline-none focus:ring-0 text-white" />
 
-                                        <button type="submit" className="w-9 h-9 flex items-center justify-center text-white rounded transition hover:bg-zinc-700 p-2">
+                                        <button type="submit" className="w-9 h-9 flex items-center justify-center text-white rounded-4xl transition hover:bg-zinc-700 p-2">
                                             <Send />
                                         </button>
                                     </form>
