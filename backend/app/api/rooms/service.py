@@ -58,7 +58,7 @@ class RoomManager:
         if len(title) > 30:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Length of title cannot be greater than 20"
+                detail="Length of title cannot be greater than 30"
             )
         
         if not host.display_name:
@@ -74,6 +74,25 @@ class RoomManager:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="You can only host up to one room."
                 )
+            
+        # Check if the user is in 2 rooms
+        count = 0
+        for _, room_details in list(self._active_rooms.items()):
+            # Check in active users
+            active_users_ids = [id for id in room_details['active_users']]
+            if host.id in active_users_ids:
+                count += 1
+
+            # Check in pending users
+            pending_users_ids = [id for id in room_details['pending_users']]
+            if host.id in pending_users_ids:
+                count += 1
+        
+        if count >= 2:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You cannot be in more than two rooms"
+            )
         
         # Check if title is valid
         if not title:
