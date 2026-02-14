@@ -8,7 +8,7 @@ export function useRequestNotifications(tokenValue, onRequestsReceived, onFetchR
             return;
         }
 
-        if (wsRef.current && (wsRef.current.readySate === WebSocket.OPEN || wsRef.current.readySate === WebSocket.CONNECTING)) {
+        if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readySate === WebSocket.CONNECTING)) {
             return;
         }
 

@@ -1,9 +1,10 @@
-import { User, Plus, Hash, LogOut, MessageCircleMore, Users, Loader, Settings, ArrowLeft, Paperclip, Send } from "lucide-react"
-import { useState, useMemo, useEffect } from "react"
+import { User, Plus, Hash, MessageCircleMore, Users, Loader, Settings, ArrowLeft, Paperclip, Send } from "lucide-react"
+import { useState, useMemo } from "react"
 import NewSessionModal from "../modals/NewSessionModal"
 import RoomHeader from "../components/RoomHeader"
 import { useDashboard } from "../hooks/useDashboard"
 import { useRequestNotifications } from "../hooks/useRequestNotifications"
+import { useRoomMessages } from "../hooks/useRoomMessages"
 
 function Dashboard() {
     
@@ -16,6 +17,7 @@ function Dashboard() {
 
         return saved ? JSON.parse(saved) : {}
     });
+    const {message, textareaRef, setMessage} = useRoomMessages();
 
     useRequestNotifications(
         token,
@@ -248,13 +250,15 @@ function Dashboard() {
                                 </div>
 
                                 <div className="fade-in p-2 mb-1 mx-3 bg-zinc-900 border-t border-zinc-800 rounded-4xl">
-                                    <form className="flex items-center gap-3">
+                                    <form className="flex items-end gap-3">
                                         <button type="button" className="w-9 h-9 cursor-pointer flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition rounded-4xl">
                                             <input type="file" id="file-upload" className="hidden" />
                                             <Paperclip size={22} />
                                         </button>
 
-                                        <input type="text" placeholder="Write a message..." className="flex-1 bg-transparent outline-none border-none focus:outline-none focus:ring-0 text-white" />
+                                        <div className="flex-1">
+                                            <textarea ref={textareaRef} type="text" value={message} onChange={e => setMessage(e.target.value)} rows={1} placeholder="Write a message..." className="w-full bg-transparent outline-none border-none focus:outline-none focus:ring-0 text-white resize-none max-h-40 box-border overflow-y-auto transition"></textarea>
+                                        </div>
 
                                         <button type="submit" className="w-9 h-9 flex items-center justify-center text-white rounded-4xl transition hover:bg-zinc-700 p-2">
                                             <Send />
