@@ -17,7 +17,7 @@ function Dashboard() {
 
         return saved ? JSON.parse(saved) : {}
     });
-    const {message, textareaRef, setMessage} = useRoomMessages();
+    const {message, textareaRef, setMessage} = useRoomMessages(token, myRooms);
 
     useRequestNotifications(
         token,
