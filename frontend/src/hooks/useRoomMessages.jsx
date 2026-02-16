@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 
 export function useRoomMessages(tokenValue, myRooms) {
     const [message, setMessage] = useState("")
+    const [roomMessages, setRoomMessages] = useState({});
     const textareaRef = useRef(null);
     const socketsRef = useRef({}); // Keep sockets of all rooms the user is connected to
     
@@ -39,6 +40,17 @@ export function useRoomMessages(tokenValue, myRooms) {
                 try {
                     const data = JSON.parse(event.data);
                     console.log("RECEIVED:", data)
+
+                    if (data.type === 'presence_update') {
+                        console.log(`${data.username} is ${data.status}`);
+                        return;
+                    }
+
+                    setRoomMessages(prev => {
+                        if (Array.isArray(data)) {
+                            return { ...prev, [roomCode]: data }
+                        }
+                    })
                 } catch (err) {
                     console.log("Error parsing message")
                 }
@@ -73,6 +85,7 @@ export function useRoomMessages(tokenValue, myRooms) {
     return {
         message,
         textareaRef,
+        roomMessages,
         setMessage
     }
 }

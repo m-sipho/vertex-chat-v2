@@ -17,7 +17,8 @@ function Dashboard() {
 
         return saved ? JSON.parse(saved) : {}
     });
-    const {message, textareaRef, setMessage} = useRoomMessages(token, myRooms);
+    const {message, textareaRef, roomMessages, setMessage} = useRoomMessages(token, myRooms);
+    const currentMessages = roomMessages[selectedRoom?.room_code] || [];
 
     useRequestNotifications(
         token,
@@ -243,27 +244,50 @@ function Dashboard() {
                                 <p className="text-sm mt-2 max-w-xs text-center text-zinc-700">Choose an active room from the sidebar or create a new one to start chatting.</p>
                             </>
                         ) : (
-                            <div className="w-full h-full flex flex-col">
-                                <div className="flex-1 overflow-auto p-4">
-                                    {/* Messages will go here - replace with real message list */}
-                                    <div className="text-zinc-500 text-center text-sm">No messages yet</div>
+                            <div className="w-full h-full flex flex-col overflow-hidden">
+                                <div className="flex-1 overflow-y-auto space-y-4">
+                                    {currentMessages.length === 0 ? (
+                                        <div className="h-full flex items-center justify-center">
+                                            {/* Messages will go here - replace with real message list */}
+                                            <div className="text-zinc-500 text-center text-sm">No messages yet</div>
+                                        </div>
+                                    ) : (
+                                        currentMessages.map((msg, index) => {
+                                            if (msg.type === "system") {
+                                                const parts = msg.message.split(" ");
+                                                const displayName = parts[0];
+                                                const restOfMessage = parts.slice(1).join(" ");
+
+                                                return (
+                                                    <div key={index} className="flex justify-center my-2">
+                                                        <span className="text-[11px] font-medium bg-zinc-900 text-zinc-500 px-3 py-1 rounded-full border border-zinc-800">
+                                                            <span className="text-indigo-400 font-semibold">{displayName}</span>
+                                                            <span> {restOfMessage}</span>
+                                                        </span>
+                                                    </div>
+                                                )
+                                            }
+                                        })
+                                    )}
                                 </div>
 
-                                <div className="fade-in p-2 mb-1 mx-3 bg-zinc-900 border-t border-zinc-800 rounded-4xl">
-                                    <form className="flex items-end gap-3">
-                                        <button type="button" className="w-9 h-9 cursor-pointer flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition rounded-4xl">
-                                            <input type="file" id="file-upload" className="hidden" />
-                                            <Paperclip size={22} />
-                                        </button>
+                                <div className="w-full">
+                                    <div className="fade-in p-2 mb-1 mx-3 bg-zinc-900 border-t border-zinc-800 rounded-4xl">
+                                        <form className="flex items-end gap-3">
+                                            <button type="button" className="w-9 h-9 cursor-pointer flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition rounded-4xl">
+                                                <input type="file" id="file-upload" className="hidden" />
+                                                <Paperclip size={22} />
+                                            </button>
 
-                                        <div className="flex-1">
-                                            <textarea ref={textareaRef} type="text" value={message} onChange={e => setMessage(e.target.value)} rows={1} placeholder="Write a message..." className="w-full bg-transparent outline-none border-none focus:outline-none focus:ring-0 text-white resize-none max-h-40 box-border overflow-y-auto transition"></textarea>
-                                        </div>
+                                            <div className="flex-1">
+                                                <textarea ref={textareaRef} type="text" value={message} onChange={e => setMessage(e.target.value)} rows={1} placeholder="Write a message..." className="w-full bg-transparent outline-none border-none focus:outline-none focus:ring-0 text-white resize-none max-h-40 box-border overflow-y-auto transition"></textarea>
+                                            </div>
 
-                                        <button type="submit" className="w-9 h-9 flex items-center justify-center text-white rounded-4xl transition hover:bg-zinc-700 p-2">
-                                            <Send />
-                                        </button>
-                                    </form>
+                                            <button type="submit" className="w-9 h-9 flex items-center justify-center text-white rounded-4xl transition hover:bg-zinc-700 p-2">
+                                                <Send />
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         )}
