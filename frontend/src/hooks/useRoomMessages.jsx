@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 export function useRoomMessages(tokenValue, myRooms) {
     const [message, setMessage] = useState("")
     const textareaRef = useRef(null);
-    const socketsRef = useRef({});
+    const socketsRef = useRef({}); // Keep sockets of all rooms the user is connected to
     
     useEffect(() => {
         if (textareaRef.current) {
@@ -14,8 +14,6 @@ export function useRoomMessages(tokenValue, myRooms) {
 
     useEffect(() => {
         if (!tokenValue || !myRooms || myRooms.length === 0) return;
-
-        // if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readySate === WebSocket.CONNECTING)) return;
 
         const WS_URL = import.meta.env.VITE_WS_REQUESTS_URL || "ws://localhost:8000";
         console.log("MY ROOMS IN WEBSOCKET", myRooms)
@@ -65,10 +63,10 @@ export function useRoomMessages(tokenValue, myRooms) {
             }
         })
 
-        return () => {
-            Object.values(socketsRef.current).forEach(ws => ws.close());
-            socketsRef.current = {};
-        };
+        // return () => {
+        //     Object.values(socketsRef.current).forEach(ws => ws.close());
+        //     socketsRef.current = {};
+        // };
 
     }, [tokenValue, myRooms])
 
