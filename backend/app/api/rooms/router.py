@@ -25,6 +25,10 @@ router = APIRouter(
 @router.post("/create-room", status_code=status.HTTP_201_CREATED)
 async def create_room(title: str, current_user: Annotated[UserData, Depends(get_current_user)]):
     results = await global_manager.create_room(title, UserData(display_name=current_user.display_name, id=current_user.id))
+
+    creation_msg = f"{current_user.display_name} created the room"
+    await global_manager.add_message_to_history(results["room_code"], current_user.display_name, creation_msg, "system")
+
     return results
 
 @router.post("/join-room", status_code=status.HTTP_202_ACCEPTED)
@@ -296,9 +300,9 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str, db: AsyncSess
     # Broadcast online presence
     await ws_manager.broadcast_presence(room_code, user.display_name, 'online')
 
-    join_msg = f"{user.display_name} joined the room"
-    await ws_manager.broadcast_system_message(room_code, join_msg)
-    await global_manager.add_message_to_history(room_code, user.display_name, join_msg, "system")
+    # join_msg = f"{user.display_name} joined the room"
+    # await ws_manager.broadcast_system_message(room_code, join_msg)
+    # await global_manager.add_message_to_history(room_code, user.display_name, join_msg, "system")
 
     try:
         while True:
