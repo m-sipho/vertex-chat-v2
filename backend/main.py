@@ -29,6 +29,7 @@ app = FastAPI(title="Vertex Backend", lifespan=lifespan)
 
 origins = [
     "http://localhost:5173",
+    "http://localhost:4173"
 ]
 
 app.add_middleware(
