@@ -70,6 +70,10 @@ async def approve(request: ApproveRequest, current_user: Annotated[UserData, Dep
     """
     status = await global_manager.approve_user(current_user.id, request.room_code, request.target_username)
 
+    join_msg = f"{request.target_username} joined the room"
+    await ws_manager.broadcast_system_message(request.room_code, join_msg)
+    await global_manager.add_message_to_history(request.room_code, request.target_username, join_msg, "system")
+
     # Get the room state
     room_state = await global_manager.get_room_state(request.room_code)
 
