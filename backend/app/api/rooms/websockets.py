@@ -2,6 +2,7 @@ from fastapi import WebSocket
 from typing import Dict, List
 import asyncio
 import logging
+from starlette.websockets import WebSocketState
 
 # Configure logging
 logger = logging.getLogger("vertex")
@@ -86,6 +87,11 @@ class ConnectionManager:
 
     async def _safe_send(self, connection: WebSocket, message: dict, room_code: str):
         """Safely send a message with a strict timeout"""
+        # If the websocket is not connected, don't try to send
+        if (connection.client_state != WebSocketState.CONNECTED):
+            await self.disconnect(connection, room_code)
+            return
+        
         try:
             await asyncio.wait_for(connection.send_json(message), timeout=10)
         except Exception as e:
