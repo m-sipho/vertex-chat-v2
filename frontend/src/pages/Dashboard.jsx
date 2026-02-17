@@ -294,7 +294,7 @@ function Dashboard() {
                                                         <div className={`flex flex-col gap-1.5 p-3 rounded-xl max-w-[75%] break-word ${isMe ? "bg-indigo-600 text-white rounded-tr-none": "bg-zinc-800 text-zinc-200 rounded-tl-none"}`}>
                                                             <div className="flex items-center space-x-2">
                                                                 <span className={`text-sm ${isMe ? 'text-zinc-300' : 'text-white'} font-bold`}>
-                                                                    {author}
+                                                                    {isMe ? "You" : author}
                                                                 </span>
                                                                 <span className={`text-sm ${isMe ? 'text-zinc-200/90' : 'text-zinc-300'} text-end`}>{localTime}</span>
                                                             </div>
