@@ -366,10 +366,7 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str, db: AsyncSess
                 ], websocket)
             
     except WebSocketDisconnect:
-        leave_msg = f"{user.display_name} left the room"
-        await ws_manager.broadcast_system_message(room_code, leave_msg)
         await ws_manager.broadcast_presence(room_code, user.display_name, 'offline')
-        await global_manager.add_message_to_history(room_code, user.display_name, leave_msg, "system")
 
         await ws_manager.disconnect(websocket, room_code)
     
