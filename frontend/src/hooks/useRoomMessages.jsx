@@ -47,8 +47,27 @@ export function useRoomMessages(tokenValue, myRooms) {
                     }
 
                     setRoomMessages(prev => {
+                        const oldMessages = prev[roomCode] || []
                         if (Array.isArray(data)) {
                             return { ...prev, [roomCode]: data }
+                        }
+
+                        // return {...prev, [roomCode]: [...oldMessages, data]}
+                        switch (data.type) {
+                            case "chat":
+                            case "system":
+                                return {
+                                    ...prev,
+                                    [roomCode]: [...oldMessages, data]
+                                };
+                            
+                            case "typing":
+                                console.log("Typing happening");
+                                return prev;
+                                
+                            default:
+                                console.warn(`Unknown message type received: ${data.type}`);
+                                return prev;
                         }
                     })
                 } catch (err) {
