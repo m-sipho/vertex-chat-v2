@@ -13,6 +13,26 @@ export function useRoomMessages(tokenValue, myRooms) {
         }
     }, [message])
 
+    async function handleSendMessage(roomCode) {
+
+        if (!message.trim() || !roomCode) return;
+
+        const messagePayload = {
+            type: "chat",
+            message: message
+        };
+
+        const roomSocket = socketsRef.current[roomCode];
+
+        if (roomSocket && roomSocket.readyState === WebSocket.OPEN) {
+            roomSocket.send(JSON.stringify(messagePayload));
+
+            setMessage("");
+        } else {
+            console.error("WebSocket is not connected for this room.");
+        }
+    }
+
     useEffect(() => {
         if (!tokenValue || !myRooms || myRooms.length === 0) return;
 
@@ -105,6 +125,7 @@ export function useRoomMessages(tokenValue, myRooms) {
         message,
         textareaRef,
         roomMessages,
-        setMessage
+        setMessage,
+        handleSendMessage
     }
 }

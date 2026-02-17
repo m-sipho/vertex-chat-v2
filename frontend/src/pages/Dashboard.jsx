@@ -17,7 +17,7 @@ function Dashboard() {
 
         return saved ? JSON.parse(saved) : {}
     });
-    const {message, textareaRef, roomMessages, setMessage} = useRoomMessages(token, myRooms);
+    const {message, textareaRef, roomMessages, setMessage, handleSendMessage} = useRoomMessages(token, myRooms);
     const currentMessages = roomMessages[selectedRoom?.room_code] || [];
 
     useRequestNotifications(
@@ -81,6 +81,18 @@ function Dashboard() {
 
         return counts
     }, [pendingRequests, lastSeenConfig])
+
+    async function handleSendingMessages(e) {
+        e.preventDefault();
+        await handleSendMessage(selectedRoom?.room_code);
+    }
+
+    async function handleKeyDown(e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            await handleSendMessage(selectedRoom?.room_code);
+        }
+    }
     
 
     return (
@@ -266,29 +278,45 @@ function Dashboard() {
                                                         </span>
                                                     </div>
                                                 )
-                                            }
+                                            } else if (msg.type === "chat") {
+                                                const author = msg.user || msg.username || "Unknown";
+                                                const isMe = author === displayName;
 
-                                            // return (
-                                            //     <div key={index} className={`flex ${msg.sender === displayName ? "justify-end" : "justify-start"} px-4`}>
-                                            //         <div className={`max-w-[70%] p-2 rounded-lg text-sm ${msg.sender === displayName ? "bg-indigo-600 text-white" : "bg-zinc-700 text-zinc-200"}`}>
-                                            //             {msg.message}
-                                            //         </div>
-                                            //     </div>
-                                            // );
+                                                const date = new Date(msg.timestamp);
+                                                const localTime = date.toLocaleTimeString([], {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    hour12: false
+                                                })
+
+                                                return (
+                                                    <div key={index} className={`w-full flex ${isMe ? "justify-end" : "justify-start"} px-8 my-2`}>
+                                                        <div className={`flex flex-col gap-1.5 p-3 rounded-xl max-w-[75%] break-word ${isMe ? "bg-indigo-600 text-white rounded-tr-none": "bg-zinc-800 text-zinc-200 rounded-tl-none"}`}>
+                                                            <div className="flex items-center space-x-2">
+                                                                <span className={`text-sm ${isMe ? 'text-zinc-300' : 'text-white'} font-bold`}>
+                                                                    {author}
+                                                                </span>
+                                                                <span className={`text-sm ${isMe ? 'text-zinc-200/90' : 'text-zinc-300'} text-end`}>{localTime}</span>
+                                                            </div>
+                                                            <div className={`text-sm ${isMe ? "text-white" : "text-zinc-400"} font-semibold`}>{msg.message}</div>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            }
                                         })
                                     )}
                                 </div>
 
                                 <div className="shrink-0 w-full">
                                     <div className="fade-in p-2 mb-1 mx-3 bg-zinc-900 border-t border-zinc-800 rounded-4xl">
-                                        <form className="flex items-end gap-3">
+                                        <form onSubmit={handleSendingMessages} className="flex items-end gap-3">
                                             <button type="button" className="w-9 h-9 cursor-pointer flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition rounded-4xl">
                                                 <input type="file" id="file-upload" className="hidden" />
                                                 <Paperclip size={22} />
                                             </button>
 
                                             <div className="flex-1">
-                                                <textarea ref={textareaRef} type="text" value={message} onChange={e => setMessage(e.target.value)} rows={1} placeholder="Write a message..." className="w-full bg-transparent outline-none border-none focus:outline-none focus:ring-0 text-white resize-none max-h-40 box-border overflow-y-auto transition"></textarea>
+                                                <textarea ref={textareaRef} onKeyDown={handleKeyDown} value={message} onChange={e => setMessage(e.target.value)} rows={1} placeholder="Write a message..." className="w-full bg-transparent outline-none border-none focus:outline-none focus:ring-0 text-white resize-none max-h-40 box-border overflow-y-auto transition"></textarea>
                                             </div>
 
                                             <button type="submit" className="w-9 h-9 flex items-center justify-center text-white rounded-4xl transition hover:bg-zinc-700 p-2">
