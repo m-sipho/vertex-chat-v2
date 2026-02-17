@@ -234,7 +234,7 @@ function Dashboard() {
                     )}
 
                     {/* Main message area (centered when no room open) */}
-                    <div className="w-full flex-1 flex items-center justify-center flex-col">
+                    <div className="w-full flex-1 flex items-center justify-center flex-col overflow-hidden">
                         {!isRoomOpen ? (
                             <>
                                 <div className="w-24 h-24 bg-zinc-900 rounded-full flex items-center justify-center mb-6 border border-zinc-800 shadow-inner">
@@ -267,11 +267,19 @@ function Dashboard() {
                                                     </div>
                                                 )
                                             }
+
+                                            // return (
+                                            //     <div key={index} className={`flex ${msg.sender === displayName ? "justify-end" : "justify-start"} px-4`}>
+                                            //         <div className={`max-w-[70%] p-2 rounded-lg text-sm ${msg.sender === displayName ? "bg-indigo-600 text-white" : "bg-zinc-700 text-zinc-200"}`}>
+                                            //             {msg.message}
+                                            //         </div>
+                                            //     </div>
+                                            // );
                                         })
                                     )}
                                 </div>
 
-                                <div className="w-full">
+                                <div className="shrink-0 w-full">
                                     <div className="fade-in p-2 mb-1 mx-3 bg-zinc-900 border-t border-zinc-800 rounded-4xl">
                                         <form className="flex items-end gap-3">
                                             <button type="button" className="w-9 h-9 cursor-pointer flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition rounded-4xl">
