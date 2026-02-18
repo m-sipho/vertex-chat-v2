@@ -128,11 +128,12 @@ class ConnectionManager:
             asyncio.create_task(send_all())
     
     
-    async def broadcast_chat_message(self, room_code: str, username: str, text: str, timestamp: str):
+    async def broadcast_chat_message(self, room_code: str, username: str, avatar_seed: str, text: str, timestamp: str):
         """Sending a usual text message"""
         payload = {
             'type': 'chat',
             'username': username,
+            'avatar_seed': avatar_seed,
             'message': text,
             'timestamp': timestamp
             # 'timestamp': datetime.now(timezone.utc).astimezone().isoformat()
