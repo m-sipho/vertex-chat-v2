@@ -17,7 +17,7 @@ function Dashboard() {
 
         return saved ? JSON.parse(saved) : {}
     });
-    const {message, textareaRef, roomMessages, setMessage, handleSendMessage} = useRoomMessages(token, myRooms);
+    const {message, textareaRef, roomMessages, isLoading, setMessage, handleSendMessage} = useRoomMessages(token, myRooms);
     const currentMessages = roomMessages[selectedRoom?.room_code] || [];
 
     useRequestNotifications(
@@ -163,17 +163,22 @@ function Dashboard() {
                                                 )}
                                             </div>
                                             
-                                            <div className="flex items-center justify-between gap-1.5 text-xs text-zinc-400 ml-5.5">
-                                                <p className="truncate flex-1 min-w-0 space-x-1">
-                                                    {lastMessage.type === "chat" && (
-                                                        <span className="text-indigo-300 font-medium">
-                                                            {isMe ? "You" : author}: 
+                                            <div className="flex items-center justify-between gap-1.5 text-xs text-zinc-400 ml-5.5 h-4">
+                                                {!isLoading ? (
+                                                    <p className="truncate flex-1 min-w-0 space-x-1">
+                                                        {lastMessage.type === "chat" && (
+                                                            <span className="text-indigo-300 font-medium">
+                                                                {isMe ? "You" : author}: 
+                                                            </span>
+                                                        )}
+                                                        <span className={lastMessage.type === "system" ? "text-indigo-400 italic" : "text-zinc-400"}>
+                                                            {lastMessage.message}
                                                         </span>
-                                                    )}
-                                                    <span className={lastMessage.type === "system" ? "text-indigo-400 italic" : "text-zinc-400"}>
-                                                        {lastMessage.message}
-                                                    </span>
-                                                </p>
+                                                    </p>
+                                                    ) : (
+                                                        <p>Loading...</p>
+                                                    ) 
+                                                }
                                                 {unread > 0 && !isRoomOpen && <span className='bg-indigo-600 text-white px-1.5 rounded-full text-[10px]'>{unread}</span>}
                                             </div>
                                         </div>

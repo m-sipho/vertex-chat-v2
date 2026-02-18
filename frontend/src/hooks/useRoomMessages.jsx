@@ -5,6 +5,7 @@ export function useRoomMessages(tokenValue, myRooms) {
     const [roomMessages, setRoomMessages] = useState({});
     const textareaRef = useRef(null);
     const socketsRef = useRef({}); // Keep sockets of all rooms the user is connected to
+    const [isLoading, setIsLoading] = useState(true);
     
     useEffect(() => {
         if (textareaRef.current) {
@@ -34,7 +35,9 @@ export function useRoomMessages(tokenValue, myRooms) {
     }
 
     useEffect(() => {
-        if (!tokenValue || !myRooms || myRooms.length === 0) return;
+        if (!tokenValue || !myRooms || myRooms.length === 0) {
+            return;
+        }
 
         const WS_URL = import.meta.env.VITE_WS_REQUESTS_URL || "ws://localhost:8000";
         console.log("MY ROOMS IN WEBSOCKET", myRooms)
@@ -69,6 +72,7 @@ export function useRoomMessages(tokenValue, myRooms) {
                     setRoomMessages(prev => {
                         const oldMessages = prev[roomCode] || []
                         if (Array.isArray(data)) {
+                            setIsLoading(false);
                             return { ...prev, [roomCode]: data }
                         }
 
@@ -76,6 +80,7 @@ export function useRoomMessages(tokenValue, myRooms) {
                         switch (data.type) {
                             case "chat":
                             case "system":
+                                setIsLoading(false);
                                 return {
                                     ...prev,
                                     [roomCode]: [...oldMessages, data]
@@ -96,10 +101,12 @@ export function useRoomMessages(tokenValue, myRooms) {
             }
 
             socket.onerror = function(error) {
+                setIsLoading(false);
                 console.error(`Socket error in ${roomCode}:`, error)
             }
 
             socket.onclose = function() {
+                setIsLoading(false);
                 console.log(`Socket for ${roomCode} closed`)
                 delete socketsRef.current[roomCode];
             }
@@ -125,6 +132,7 @@ export function useRoomMessages(tokenValue, myRooms) {
         message,
         textareaRef,
         roomMessages,
+        isLoading,
         setMessage,
         handleSendMessage
     }
