@@ -97,7 +97,7 @@ function Dashboard() {
 
     return (
         <div>
-            <div className="h-screen bg-zinc-950 flex">
+            <div className="h-screen w-full bg-zinc-950 flex">
                 {/* Sidebar */}
                 <div className="w-100 h-screen border-r border-zinc-700 flex flex-col bg-zinc-800">
                     <div className="h-16 w-full flex items-center justify-between px-5">
@@ -170,7 +170,7 @@ function Dashboard() {
                                                             {isMe ? "You" : author}: 
                                                         </span>
                                                     )}
-                                                    <span className={lastMessage.type === "system" ? "text-indigo-500 italic" : "text-zinc-400"}>
+                                                    <span className={lastMessage.type === "system" ? "text-indigo-400 italic" : "text-zinc-400"}>
                                                         {lastMessage.message}
                                                     </span>
                                                 </p>
@@ -296,6 +296,10 @@ function Dashboard() {
                                                 const author = msg.user || msg.username || "Unknown";
                                                 const isMe = author === displayName;
 
+                                                // Check if the previous message was by the same person
+                                                const previousMsg = index > 0 ? currentMessages[index - 1]: null;
+                                                const isSameAsPrevious = previousMsg && (previousMsg.user || previousMsg.username) === author;
+
                                                 const date = new Date(msg.timestamp);
                                                 const localTime = date.toLocaleTimeString([], {
                                                     hour: '2-digit',
@@ -305,10 +309,14 @@ function Dashboard() {
 
                                                 return (
                                                     <div key={index} className={`w-full flex ${isMe ? "justify-end" : "justify-start gap-2.5"} px-8 my-2`}>
-                                                        {!isMe && 
+                                                        {!isMe && !isSameAsPrevious ? (
                                                             <img className="w-9 h-9" src={`https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${msg.avatar_seed}&radius=50`} alt="avatar"/>
-                                                        }
-                                                        <div className={`flex flex-col gap-1.5 p-3 rounded-xl max-w-[75%] wrap-break-word ${isMe ? "bg-indigo-600 text-white rounded-tr-none": "bg-zinc-800 text-zinc-200 rounded-tl-none"}`}>
+                                                        ) : (
+                                                            !isMe && (
+                                                                <div className="w-9 shrink-0"></div>
+                                                            )
+                                                        )}
+                                                        <div className={`flex flex-col gap-1.5 p-3 rounded-xl max-w-[75%] wrap-break-word ${isMe ? `bg-indigo-600 text-white rounded-tr-none ${isSameAsPrevious ? "rounded-tr-xl": "rounded-tr-none"}`: `bg-zinc-800 text-zinc-200 rounded-tl-none ${isSameAsPrevious ? "rounded-tl-xl": "rounded-tl-none"}`}`}>
                                                             <div className="flex items-center space-x-2">
                                                                 <span className={`text-sm ${isMe ? 'text-zinc-300' : 'text-white'} font-bold`}>
                                                                     {isMe ? "You" : author}
