@@ -290,7 +290,10 @@ function Dashboard() {
                                                 })
 
                                                 return (
-                                                    <div key={index} className={`w-full flex ${isMe ? "justify-end" : "justify-start"} px-8 my-2`}>
+                                                    <div key={index} className={`w-full flex ${isMe ? "justify-end" : "justify-start gap-2.5"} px-8 my-2`}>
+                                                        {!isMe && 
+                                                            <img className="w-9 h-9" src={`https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${msg.avatar_seed}&radius=50`} alt="avatar"/>
+                                                        }
                                                         <div className={`flex flex-col gap-1.5 p-3 rounded-xl max-w-[75%] break-word ${isMe ? "bg-indigo-600 text-white rounded-tr-none": "bg-zinc-800 text-zinc-200 rounded-tl-none"}`}>
                                                             <div className="flex items-center space-x-2">
                                                                 <span className={`text-sm ${isMe ? 'text-zinc-300' : 'text-white'} font-bold`}>
