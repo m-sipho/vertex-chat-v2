@@ -99,7 +99,7 @@ function Dashboard() {
         <div>
             <div className="h-screen bg-zinc-950 flex">
                 {/* Sidebar */}
-                <div className="w-84 h-screen border-r border-zinc-700 flex flex-col bg-zinc-800">
+                <div className="w-100 h-screen border-r border-zinc-700 flex flex-col bg-zinc-800">
                     <div className="h-16 w-full flex items-center justify-between px-5">
                         <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8" >
@@ -135,7 +135,14 @@ function Dashboard() {
                                 </div>
 
                                 {myRooms.map(myRoom => {
-                                    const unread = unreadCounts[myRoom.room_code] || 0
+                                    const unread = unreadCounts[myRoom.room_code] || 0;
+
+                                    const messages = roomMessages[myRoom.room_code] || [];
+                                    const lastMessage = messages[messages.length - 1] || "";
+
+                                    const author = lastMessage.user || lastMessage.username || "";
+                                    const isMe = author === displayName;
+                                    console.log("LAST MESSAGE:", lastMessage);
                                     return (
                                         <div onClick={() => handleOpenRoom(myRoom)} key={myRoom.room_code} className={`cursor-pointer py-3 px-3 rounded-lg transition flex flex-col gap-2 group mb-2 mx-2 hover:bg-zinc-700/70 ${isRoomOpen && selectedRoom?.room_code === myRoom.room_code ? 'bg-zinc-700/70' : 'bg-zinc-900/50'} ${unread > 0 && !isRoomOpen ? 'border-l-3 border-indigo-400' : ''}`}>
                                             <div className="flex items-center gap-2.5 overflow-hidden w-full">
@@ -143,23 +150,30 @@ function Dashboard() {
                                                 <div className="flex-1 min-w-0 truncate text-white">
                                                     <span className="text-sm font-medium text-zinc-100">{myRoom.title}</span>
                                                 </div>
-                                                <span className="text-[11px] font-mono bg-zinc-900/60 px-2 py-0.5 rounded text-zinc-400 shrink-0">
-                                                    {myRoom.room_code}
-                                                </span>
-                                            </div>
-                                            
-                                            <div className="flex items-center justify-between gap-1.5 text-xs text-zinc-400 ml-5.5">
                                                 {myRoom.members_size > 1 ? (
-                                                    <div className="flex gap-2">
+                                                    <div className="flex gap-2 justify-between items-center text-xs text-zinc-400">
                                                         <Users size={13} className="text-indigo-400/60 shrink-0" />
                                                         <span>{myRoom.members_size} members</span>
                                                     </div>
                                                 ) : (
-                                                    <div className="flex gap-2">
+                                                    <div className="flex gap-2 justify-between items-center text-xs text-zinc-400">
                                                         <User size={13} className="text-indigo-400/60 shrink-0" />
                                                         <span>Only you</span>
                                                     </div>
                                                 )}
+                                            </div>
+                                            
+                                            <div className="flex items-center justify-between gap-1.5 text-xs text-zinc-400 ml-5.5">
+                                                <p className="truncate flex-1 min-w-0 space-x-1">
+                                                    {lastMessage.type === "chat" && (
+                                                        <span className="text-indigo-300 font-medium">
+                                                            {isMe ? "You" : author}: 
+                                                        </span>
+                                                    )}
+                                                    <span className={lastMessage.type === "system" ? "text-indigo-500 italic" : "text-zinc-400"}>
+                                                        {lastMessage.message}
+                                                    </span>
+                                                </p>
                                                 {unread > 0 && !isRoomOpen && <span className='bg-indigo-600 text-white px-1.5 rounded-full text-[10px]'>{unread}</span>}
                                             </div>
                                         </div>
@@ -294,7 +308,7 @@ function Dashboard() {
                                                         {!isMe && 
                                                             <img className="w-9 h-9" src={`https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${msg.avatar_seed}&radius=50`} alt="avatar"/>
                                                         }
-                                                        <div className={`flex flex-col gap-1.5 p-3 rounded-xl max-w-[75%] break-word ${isMe ? "bg-indigo-600 text-white rounded-tr-none": "bg-zinc-800 text-zinc-200 rounded-tl-none"}`}>
+                                                        <div className={`flex flex-col gap-1.5 p-3 rounded-xl max-w-[75%] wrap-break-word ${isMe ? "bg-indigo-600 text-white rounded-tr-none": "bg-zinc-800 text-zinc-200 rounded-tl-none"}`}>
                                                             <div className="flex items-center space-x-2">
                                                                 <span className={`text-sm ${isMe ? 'text-zinc-300' : 'text-white'} font-bold`}>
                                                                     {isMe ? "You" : author}
