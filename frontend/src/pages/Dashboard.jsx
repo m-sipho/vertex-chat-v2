@@ -1,5 +1,5 @@
 import { User, Plus, Hash, MessageCircleMore, Users, Loader, Settings, ArrowLeft, Paperclip, Send } from "lucide-react"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import NewSessionModal from "../modals/NewSessionModal"
 import RoomHeader from "../components/RoomHeader"
 import { useDashboard } from "../hooks/useDashboard"
@@ -19,6 +19,11 @@ function Dashboard() {
     });
     const {message, textareaRef, roomMessages, isLoading, setMessage, handleSendMessage} = useRoomMessages(token, myRooms);
     const currentMessages = roomMessages[selectedRoom?.room_code] || [];
+    const messageEndRef = useRef(null);
+
+    useEffect(() => {
+        messageEndRef.current?.scrollIntoView({ behaviour: "smooth" })
+    }, [currentMessages])
 
     useRequestNotifications(
         token,
@@ -335,6 +340,7 @@ function Dashboard() {
                                             }
                                         })
                                     )}
+                                    <div ref={messageEndRef} />
                                 </div>
 
                                 <div className="shrink-0 w-full">
