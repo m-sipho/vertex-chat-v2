@@ -352,7 +352,7 @@ function Dashboard() {
                                             </button>
 
                                             <div className="flex-1">
-                                                <textarea ref={textareaRef} onKeyDown={handleKeyDown} value={message} onChange={e => setMessage(e.target.value)} rows={1} placeholder="Write a message..." className="w-full bg-transparent outline-none border-none focus:outline-none focus:ring-0 text-white resize-none max-h-40 box-border overflow-y-auto transition"></textarea>
+                                                <textarea autoFocus ref={textareaRef} onKeyDown={handleKeyDown} value={message} onChange={e => setMessage(e.target.value)} rows={1} placeholder="Write a message..." className="w-full bg-transparent outline-none border-none focus:outline-none focus:ring-0 text-white resize-none max-h-40 box-border overflow-y-auto transition"></textarea>
                                             </div>
 
                                             <button type="submit" className="w-9 h-9 flex items-center justify-center text-white rounded-4xl transition hover:bg-zinc-700 p-2">
