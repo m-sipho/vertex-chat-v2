@@ -1,4 +1,4 @@
-import { User, Plus, Hash, MessageCircleMore, Users, Loader, Settings, ArrowLeft, Paperclip, Send } from "lucide-react"
+import { User, Plus, Hash, MessageCircleMore, Users, Loader, Settings, ArrowLeft, Paperclip, Send, ChevronDown } from "lucide-react"
 import { useState, useMemo, useRef, useEffect } from "react"
 import NewSessionModal from "../modals/NewSessionModal"
 import RoomHeader from "../components/RoomHeader"
@@ -20,12 +20,37 @@ function Dashboard() {
     const {message, textareaRef, roomMessages, isLoading, setMessage, handleSendMessage} = useRoomMessages(token, myRooms);
     const currentMessages = roomMessages[selectedRoom?.room_code] || [];
     const messageEndRef = useRef(null);
+    const [isAtBottom, setIsAtBottom] = useState(true);
+    const [missedMessages, setMissedMessages] = useState(0);
+    const scrollContainerRef = useRef(null);
+
+    function handleScroll() {
+        console.log("Scroll detected");
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        // Check if user is within 100px of the bottom
+        const isBottom = (container.scrollHeight - container.scrollTop <= container.clientHeight + 100);
+        console.log("Is Bottom?:", isBottom);
+        setIsAtBottom(isBottom);
+
+        if (isBottom) setMissedMessages(0); // Reset count if they scrolled to the bottom
+    }
+
+    useEffect(() => {
+        const lastMessage = currentMessages[currentMessages.length - 1];
+        if (!lastMessage) return;
+
+        if ((lastMessage.user !== displayName || lastMessage.username !== displayName) && !isAtBottom) {
+            setMissedMessages(prev => prev + 1);
+        }
+    }, [currentMessages])
 
     useEffect(() => {
         // Only scroll to the bottom only to the sender
         const lastMessage = currentMessages[currentMessages.length - 1];
-        if (lastMessage?.user === displayName || lastMessage?.username === displayName) {
-            messageEndRef.current?.scrollIntoView({ behaviour: "smooth" });
+        if ((lastMessage?.user === displayName || lastMessage?.username === displayName) || isAtBottom) {
+            messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
         }
     }, [currentMessages])
 
@@ -285,7 +310,7 @@ function Dashboard() {
                             </>
                         ) : (
                             <div className="w-full h-full flex flex-col overflow-hidden">
-                                <div className="flex-1 overflow-y-auto space-y-4">
+                                <div className="flex-1 overflow-y-auto space-y-4" ref={scrollContainerRef} onScroll={handleScroll}>
                                     {currentMessages.length === 0 ? (
                                         <div className="h-full flex items-center justify-center">
                                             {/* Messages will go here - replace with real message list */}
@@ -346,6 +371,18 @@ function Dashboard() {
                                     )}
                                     <div ref={messageEndRef} />
                                 </div>
+
+                                {/* Floating Chevron */}
+                                {!isAtBottom && (
+                                    <button onClick={() => (messageEndRef.current?.scrollIntoView({ behavior: "smooth" }))} className="fixed bottom-24 right-8 bg-zinc-800/60 text-white p-3 rounded-full hover:bg-zinc-800 transition-all flex items-center justify-center">
+                                        <ChevronDown />
+                                        {missedMessages > 0 && (
+                                            <span className="absolute -top-px -right-2 bg-red-500 text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-zinc-950">
+                                                {missedMessages}
+                                            </span>
+                                        )}
+                                    </button>
+                                )}
 
                                 <div className="shrink-0 w-full">
                                     <div className="fade-in p-2 mb-1 mx-3 bg-zinc-900 border-t border-zinc-800 rounded-4xl">
