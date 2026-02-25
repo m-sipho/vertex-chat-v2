@@ -23,15 +23,18 @@ function Dashboard() {
     const [isAtBottom, setIsAtBottom] = useState(true);
     const [missedMessages, setMissedMessages] = useState(0);
     const scrollContainerRef = useRef(null);
+    const isInitialRoomLoad = useRef(true);
+
+    useEffect(() => {
+        isInitialRoomLoad.current = true;
+    }, [selectedRoom?.room_code]);
 
     function handleScroll() {
-        console.log("Scroll detected");
         const container = scrollContainerRef.current;
         if (!container) return;
 
         // Check if user is within 100px of the bottom
-        const isBottom = (container.scrollHeight - container.scrollTop <= container.clientHeight + 100);
-        console.log("Is Bottom?:", isBottom);
+        const isBottom = (container.scrollHeight - container.scrollTop <= container.clientHeight + 50);
         setIsAtBottom(isBottom);
 
         if (isBottom) setMissedMessages(0); // Reset count if they scrolled to the bottom
@@ -49,10 +52,13 @@ function Dashboard() {
     useEffect(() => {
         // Only scroll to the bottom only to the sender
         const lastMessage = currentMessages[currentMessages.length - 1];
-        if ((lastMessage?.user === displayName || lastMessage?.username === displayName) || isAtBottom) {
-            messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if ((lastMessage?.user === displayName || lastMessage?.username === displayName) || isAtBottom || isInitialRoomLoad.current) {
+            // Use auto for the first load and smooth for new messages
+            const scrollBehavior = isInitialRoomLoad.current ? "auto" : "smooth";
+            messageEndRef.current?.scrollIntoView({ behavior: scrollBehavior });
+            isInitialRoomLoad.current = false;
         }
-    }, [currentMessages])
+    }, [currentMessages, selectedRoom?.room_code])
 
     useRequestNotifications(
         token,
