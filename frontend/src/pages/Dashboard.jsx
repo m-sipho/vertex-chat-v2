@@ -22,7 +22,11 @@ function Dashboard() {
     const messageEndRef = useRef(null);
 
     useEffect(() => {
-        messageEndRef.current?.scrollIntoView({ behaviour: "smooth" })
+        // Only scroll to the bottom only to the sender
+        const lastMessage = currentMessages[currentMessages.length - 1];
+        if (lastMessage?.user === displayName || lastMessage?.username === displayName) {
+            messageEndRef.current?.scrollIntoView({ behaviour: "smooth" });
+        }
     }, [currentMessages])
 
     useRequestNotifications(
