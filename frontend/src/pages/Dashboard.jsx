@@ -119,8 +119,23 @@ function Dashboard() {
             }
         });
 
+        Object.keys(roomMessages).forEach(roomCode => {
+            const messages = roomMessages[roomCode] || [];
+            const lastViewed = lastSeenConfig[roomCode] || "0";
+
+            // Count messages in this room that are newer than lastSeen
+            const unreadInRoom = messages.filter(msg => {
+                const isNotMe = (msg.user || msg.username) !== displayName;
+                return isNotMe && msg.timestamp > lastViewed;
+            }).length;
+
+            if (unreadInRoom > 0) {
+                counts[roomCode] = (counts[roomCode] || 0) + unreadInRoom;
+            }
+        })
+
         return counts
-    }, [pendingRequests, lastSeenConfig])
+    }, [pendingRequests, lastSeenConfig, currentMessages])
 
     async function handleSendingMessages(e) {
         e.preventDefault();
