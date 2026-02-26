@@ -20,7 +20,7 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
         const lastMessage = currentMessages[currentMessages.length - 1];
         if (!lastMessage) return;
 
-        if ((lastMessage.user !== displayName || lastMessage.username !== displayName) && !isAtBottom) {
+        if ((lastMessage.username !== displayName) && !isAtBottom) {
             setMissedMessages(prev => prev + 1);
         }
 
@@ -44,7 +44,7 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
         if (!container) return;
 
         // Check if user is within 100px of the bottom
-        const isBottom = (container.scrollHeight - container.scrollTop <= container.clientHeight + 50);
+        const isBottom = (container.scrollHeight - container.scrollTop <= container.clientHeight + 100);
         setIsAtBottom(isBottom);
 
         if (isBottom) setMissedMessages(0); // Reset count if they scrolled to the bottom
