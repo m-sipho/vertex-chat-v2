@@ -24,6 +24,8 @@ function Dashboard() {
     const [missedMessages, setMissedMessages] = useState(0);
     const scrollContainerRef = useRef(null);
     const isInitialRoomLoad = useRef(true);
+    const lastSeenMessageRef = useRef(null);
+    const [previousLastSeen, setPreviousLastSeen] = useState(null);
 
     useEffect(() => {
         isInitialRoomLoad.current = true;
@@ -41,22 +43,26 @@ function Dashboard() {
     }
 
     useEffect(() => {
+        // Only scroll to the bottom only to the sender
         const lastMessage = currentMessages[currentMessages.length - 1];
         if (!lastMessage) return;
 
         if ((lastMessage.user !== displayName || lastMessage.username !== displayName) && !isAtBottom) {
             setMissedMessages(prev => prev + 1);
         }
-    }, [currentMessages])
 
-    useEffect(() => {
-        // Only scroll to the bottom only to the sender
-        const lastMessage = currentMessages[currentMessages.length - 1];
-        if ((lastMessage?.user === displayName || lastMessage?.username === displayName) || isAtBottom || isInitialRoomLoad.current) {
-            // Use auto for the first load and smooth for new messages
-            const scrollBehavior = isInitialRoomLoad.current ? "auto" : "smooth";
-            messageEndRef.current?.scrollIntoView({ behavior: scrollBehavior });
+        // Check if this is the first load of this room
+        if (isInitialRoomLoad.current) {
+            if (lastSeenMessageRef.current) {
+                lastSeenMessageRef.current.scrollIntoView({behavior: "auto", block: "center"})
+            } else {
+                messageEndRef.current?.scrollIntoView({ behavior: "auto" });
+            }
+
             isInitialRoomLoad.current = false;
+        } else if ((lastMessage?.user === displayName || lastMessage?.username === displayName) || isAtBottom) {
+            
+            messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
         }
     }, [currentMessages, selectedRoom?.room_code])
 
@@ -87,6 +93,10 @@ function Dashboard() {
     }
 
     function handleOpenRoom(room) {
+        // Capture what's in storage before updating it
+        const oldTimestamp = lastSeenConfig[room.room_code] || "0";
+        setPreviousLastSeen(oldTimestamp);
+
         setSelectedRoom(room);
         setIsRoomOpen(true);
 
@@ -108,12 +118,11 @@ function Dashboard() {
     const unreadCounts = useMemo(() => {
         // Structure: {"room_A: 2", "room_B": 1}
         const counts = {}
-        console.log("PENDING REQUESTS:", pendingRequests);
+        
         Object.values(pendingRequests).forEach(request => {
             const lastViewed = lastSeenConfig[request.room_code] || "0";
 
             // Only count it if it's newer than last visit
-            console.log(`DEBUG: request.timestamp = ${request.timestamp} and lastViewed = ${lastViewed}`)
             if (request.timestamp > lastViewed) {
                 counts[request.room_code] = (counts[request.room_code] || 0) + 1;
             }
@@ -197,7 +206,6 @@ function Dashboard() {
 
                                     const author = lastMessage.user || lastMessage.username || "";
                                     const isMe = author === displayName;
-                                    console.log("LAST MESSAGE:", lastMessage);
                                     return (
                                         <div onClick={() => handleOpenRoom(myRoom)} key={myRoom.room_code} className={`cursor-pointer py-3 px-3 rounded-lg transition flex flex-col gap-2 group mb-2 mx-2 hover:bg-zinc-700/70 ${isRoomOpen && selectedRoom?.room_code === myRoom.room_code ? 'bg-zinc-700/70' : 'bg-zinc-900/50'} ${unread > 0 && !isRoomOpen ? 'border-l-3 border-indigo-400' : ''}`}>
                                             <div className="flex items-center gap-2.5 overflow-hidden w-full">
@@ -339,13 +347,20 @@ function Dashboard() {
                                         </div>
                                     ) : (
                                         currentMessages.map((msg, index) => {
+                                            const currentMsgTimestamp = msg.timestamp || "0";
+                                            const nextMessageTimestamp = currentMessages[index + 1]?.timestamp || "0";
+                                            const lastViewed = previousLastSeen || "0";
+
+                                            // Look for the 1st message where the NEXT message is newer than lastViewed
+                                            const isLastSeenPoint = currentMsgTimestamp <= lastViewed && (nextMessageTimestamp > lastViewed);
+
                                             if (msg.type === "system") {
                                                 const parts = msg.message.split(" ");
                                                 const displayName = parts[0];
                                                 const restOfMessage = parts.slice(1).join(" ");
 
                                                 return (
-                                                    <div key={index} className="flex justify-center my-2">
+                                                    <div ref={isLastSeenPoint ? lastSeenMessageRef : null} key={index} className="flex justify-center my-2">
                                                         <span className="text-[11px] font-medium bg-zinc-900 text-zinc-500 px-3 py-1 rounded-full border border-zinc-800">
                                                             <span className="text-indigo-400 font-semibold">{displayName}</span>
                                                             <span> {restOfMessage}</span>
@@ -368,7 +383,7 @@ function Dashboard() {
                                                 })
 
                                                 return (
-                                                    <div key={index} className={`w-full flex ${isMe ? "justify-end" : "justify-start gap-2.5"} px-8 my-2`}>
+                                                    <div ref={isLastSeenPoint ? lastSeenMessageRef : null} key={index} className={`w-full flex ${isMe ? "justify-end" : "justify-start gap-2.5"} px-8 my-2`}>
                                                         {!isMe && !isSameAsPrevious ? (
                                                             <img className="w-9 h-9" src={`https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${msg.avatar_seed}&radius=50`} alt="avatar"/>
                                                         ) : (
