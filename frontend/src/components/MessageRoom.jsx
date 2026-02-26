@@ -1,4 +1,4 @@
-import { MessageCircleMore, ArrowLeft, Paperclip, Send, ChevronDown } from "lucide-react"
+import { MessageCircleMore, ArrowLeft, Paperclip, Send, ChevronDown, Smile } from "lucide-react"
 import RoomHeader from "../components/RoomHeader"
 import { useEffect, useState, useRef } from "react";
 
@@ -204,9 +204,14 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                                             <textarea autoFocus ref={textareaRef} onKeyDown={handleKeyDown} value={message} onChange={e => setMessage(e.target.value)} rows={1} placeholder="Write a message..." className="w-full bg-transparent outline-none border-none focus:outline-none focus:ring-0 text-white resize-none max-h-40 box-border overflow-y-auto transition"></textarea>
                                         </div>
 
-                                        <button type="submit" className="w-9 h-9 flex items-center justify-center text-white rounded-4xl transition hover:bg-zinc-700 p-2">
-                                            <Send />
-                                        </button>
+                                        <div className="flex gap-1.5">
+                                            <button type="button" className="w-9 h-9 flex items-center justify-center text-zinc-400 rounded-4xl transition hover:text-zinc-500 cursor-pointer">
+                                                <Smile />
+                                            </button>
+                                            <button type="submit" className={`w-9 h-9 flex items-center justify-center ${message.trim().length === 0 ? 'text-zinc-600' : 'text-white hover:bg-zinc-700'} rounded-4xl transition p-2 cursor-pointer`}>
+                                                <Send />
+                                            </button>
+                                        </div>
                                     </form>
                                 </div>
                             </div>
