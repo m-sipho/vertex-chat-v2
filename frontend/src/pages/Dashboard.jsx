@@ -67,17 +67,19 @@ function Dashboard() {
                 {/* Sidebar */}
                 <Sidebar seed={seed} displayName={displayName} setModalOpen={setModalOpen} myRooms={myRooms} roomMessages={roomMessages} isRoomOpen={isRoomOpen} selectedRoom={selectedRoom} isLoading={isLoading} requestedRooms={requestedRooms} sidebarLoading={sidebarLoading} setSelectedRoom={setSelectedRoom} setIsRoomOpen={setIsRoomOpen} setPreviousLastSeen={setPreviousLastSeen} setLastSeenConfig={setLastSeenConfig} lastSeenConfig={lastSeenConfig} unreadCounts={unreadCounts} />
 
-                {error && (
-                    <div className="fixed top-5 text-red-400 text-xs text-center bg-red-500/10 border border-red-500/20 p-2 rounded transition fade-out">
-                        {error}
-                    </div>
-                )}
-                
-                {success && (
-                    <div className="fixed top-5 text-emerald-400 text-xs text-center bg-emerald-500/10 border border-emerald-500/20 p-2 rounded transition fade-out">
-                        {success}
-                    </div>
-                )}
+                <div className="absolute left-1/2 z-50">
+                    {error && (
+                        <div className="fixed top-5 text-red-400 text-xs text-center bg-red-500/10 border border-red-500/20 p-2 rounded transition fade-out">
+                            {error}
+                        </div>
+                    )}
+                    
+                    {success && (
+                        <div className="fixed top-5 text-emerald-400 text-xs text-center bg-emerald-500/10 border border-emerald-500/20 p-2 rounded transition fade-out">
+                            {success}
+                        </div>
+                    )}
+                </div>
 
                 <MessageRoom setSelectedRoom={setSelectedRoom} setIsRoomOpen={setIsRoomOpen} setLastSeenConfig={setLastSeenConfig} lastSeenConfig={lastSeenConfig} handleSendMessage={handleSendMessage} selectedRoom={selectedRoom} isRoomOpen={isRoomOpen} pendingRequests={pendingRequests} handleApprove={handleApprove} handleReject={handleReject} currentMessages={currentMessages} displayName={displayName} previousLastSeen={previousLastSeen} textareaRef={textareaRef} setMessage={setMessage} message={message} />
             </div>
