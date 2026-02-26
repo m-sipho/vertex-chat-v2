@@ -170,7 +170,7 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                                                             </span>
                                                             <span className={`text-sm ${isMe ? 'text-zinc-200/90' : 'text-zinc-300'} text-end`}>{localTime}</span>
                                                         </div>
-                                                        <div className={`text-sm ${isMe ? "text-white" : "text-zinc-400"} font-semibold`}>{msg.message}</div>
+                                                        <div className={`text-sm ${isMe ? "text-white" : "text-zinc-400"} font-semibold whitespace-pre-wrap`}>{msg.message}</div>
                                                     </div>
                                                 </div>
                                             )
