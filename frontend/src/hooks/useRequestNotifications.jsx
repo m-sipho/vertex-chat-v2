@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export function useRequestNotifications(tokenValue, onRequestsReceived, onFetchRooms, onUpdatePendingRequests) {
+export function useRequestNotifications(tokenValue, onRequestsReceived, onFetchRooms, onUpdatePendingRequests, lastSeenConfig, setLastSeenConfig) {
     const wsRef = useRef(null);
     
     useEffect(() => {
@@ -30,7 +30,22 @@ export function useRequestNotifications(tokenValue, onRequestsReceived, onFetchR
                             await onRequestsReceived(data.request);
                             await onUpdatePendingRequests();
                         } else if (data.type === "request_approved") {
+                            console.log("DATA:", data);
                             await onUpdatePendingRequests()
+                            // Mark as read by saving the current time
+                            const now = new Date().toISOString();
+
+                            const updatedLastSeen = {
+                                ...lastSeenConfig,
+                                [data.room_code]: now
+                            };
+
+                            // Set last seen
+                            setLastSeenConfig(updatedLastSeen);
+
+                            // Save to persist on refresh
+                            sessionStorage.setItem("lastSeenConfig", JSON.stringify(updatedLastSeen))
+
                         } else if (data.type === "request_rejected") {
                             await onUpdatePendingRequests()
                         } else if (data.type === "request_removed") {

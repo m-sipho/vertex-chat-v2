@@ -26,7 +26,9 @@ function Dashboard() {
         token,
         handleNewRequests,
         fetchRooms,
-        updatePendingRooms
+        updatePendingRooms,
+        lastSeenConfig,
+        setLastSeenConfig
     )
 
     const unreadCounts = useMemo(() => {
