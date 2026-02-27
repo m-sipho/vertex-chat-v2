@@ -1,6 +1,7 @@
 import { MessageCircleMore, ArrowLeft, Paperclip, Send, ChevronDown, Smile } from "lucide-react"
 import RoomHeader from "../components/RoomHeader"
 import { useEffect, useState, useRef } from "react";
+import EmojiPicker from "emoji-picker-react"
 
 function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSeenConfig, handleSendMessage, selectedRoom, isRoomOpen, pendingRequests, handleApprove, handleReject, currentMessages, displayName, previousLastSeen, textareaRef, setMessage, message }) {
 
@@ -10,6 +11,13 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
     const isInitialRoomLoad = useRef(true);
     const lastSeenMessageRef = useRef(null);
     const messageEndRef = useRef(null);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+    function onEmojiClick(emojiData) {
+        setMessage(prev => prev + emojiData.emoji);
+
+        textareaRef.current.focus();
+    }
 
     useEffect(() => {
             isInitialRoomLoad.current = true;
@@ -205,7 +213,7 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                                         </div>
 
                                         <div className="flex gap-1.5">
-                                            <button type="button" className="w-9 h-9 flex items-center justify-center text-zinc-400 rounded-4xl transition hover:text-zinc-500 cursor-pointer">
+                                            <button type="button" className={`${showEmojiPicker ? 'text-indigo-400' : 'text-zinc-400'} w-9 h-9 flex items-center justify-center rounded-4xl transition cursor-pointer`} onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
                                                 <Smile />
                                             </button>
                                             <button type="submit" className={`w-9 h-9 flex items-center justify-center ${message.trim().length === 0 ? 'text-zinc-600' : 'text-white hover:bg-zinc-700'} rounded-4xl transition p-2 cursor-pointer`}>
@@ -213,6 +221,12 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                                             </button>
                                         </div>
                                     </form>
+
+                                    {showEmojiPicker && (
+                                        <div className="absolute bottom-14.5 right-0 z-50 transition">
+                                            <EmojiPicker theme="dark" emojiStyle="native" previewConfig={{showPreview: false}} onEmojiClick={onEmojiClick} searchDisabled={false} />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
