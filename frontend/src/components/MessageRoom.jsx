@@ -1,4 +1,4 @@
-import { MessageCircleMore, ArrowLeft, Paperclip, Send, ChevronDown, Smile } from "lucide-react"
+import { MessageCircleMore, ArrowLeft, Paperclip, Send, ChevronDown, Smile, Image, File } from "lucide-react"
 import RoomHeader from "../components/RoomHeader"
 import { useEffect, useState, useRef } from "react";
 import EmojiPicker from "emoji-picker-react"
@@ -12,6 +12,7 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
     const lastSeenMessageRef = useRef(null);
     const messageEndRef = useRef(null);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [showAttach, setShowAttach] = useState(false);
 
     function onEmojiClick(emojiData) {
         setMessage(prev => prev + emojiData.emoji);
@@ -203,8 +204,7 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                             <div className="shrink-0 w-full">
                                 <div className="fade-in p-2 mb-1 mx-3 bg-zinc-900 border-t border-zinc-800 rounded-4xl">
                                     <form onSubmit={handleSendingMessages} className="flex items-end gap-3">
-                                        <button type="button" className="w-9 h-9 cursor-pointer flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition rounded-4xl">
-                                            <input type="file" id="file-upload" className="hidden" />
+                                        <button type="button" onClick={() => setShowAttach(!showAttach)} className="w-9 h-9 cursor-pointer flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition rounded-4xl" title="Attach">
                                             <Paperclip size={22} />
                                         </button>
 
@@ -225,6 +225,21 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                                     {showEmojiPicker && (
                                         <div className="absolute bottom-14.5 right-0 z-50 transition">
                                             <EmojiPicker theme="dark" emojiStyle="native" previewConfig={{showPreview: false}} onEmojiClick={onEmojiClick} searchDisabled={false} />
+                                        </div>
+                                    )}
+
+                                    {showAttach && (
+                                        <div className="absolute bottom-14.5 left-0 z-50 transition mx-3 py-2 rounded-lg bg-zinc-900/98">
+                                            <label className="flex text-md gap-5 items-center w-50 hover:bg-zinc-800 px-4 py-2 cursor-pointer" onClick={() => setShowAttach(false)}>
+                                                <Image size={30} className="text-white" strokeWidth="1px" />
+                                                <span className="text-white font-light">Image</span>
+                                                <input type="file" multiple className="hidden" accept='image/*' />
+                                            </label>
+                                            <label className="flex text-md gap-5 items-center w-50 hover:bg-zinc-800 px-4 py-2 cursor-pointer" onClick={() => setShowAttach(false)}>
+                                                <File size={30} className="text-white" strokeWidth="1px" />
+                                                <span className="text-white font-light">Files</span>
+                                                <input type="file" multiple  className="hidden" accept="application/*" />
+                                            </label>
                                         </div>
                                     )}
                                 </div>
