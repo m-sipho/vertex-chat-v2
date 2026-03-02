@@ -1,4 +1,4 @@
-import { MessageCircleMore, ArrowLeft, Paperclip, Send, ChevronDown, Smile, Image, File } from "lucide-react"
+import { MessageCircleMore, ArrowLeft, Paperclip, Send, ChevronDown, Smile, Image, File, X, Trash2, ImagePlus } from "lucide-react"
 import RoomHeader from "../components/RoomHeader"
 import { useEffect, useState, useRef } from "react";
 import EmojiPicker from "emoji-picker-react"
@@ -13,6 +13,35 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
     const messageEndRef = useRef(null);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [showAttach, setShowAttach] = useState(false);
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    const [selectedFiles, setSelectedFiles] = useState([]);
+    const [previews, setPreviews] =useState([]);
+    const [caption, setCaption] = useState("");
+    const imageInputRef = useRef(null);
+    const [selectedImg, setSelectedImg] = useState(null);
+    
+
+    const handleUpload = async (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+
+        setSelectedFiles(files);
+
+        // Create temporary URLs to see images in the modal
+        const filePreviews = files.map(file =>
+            URL.createObjectURL(file)
+        );
+
+        setPreviews(filePreviews);
+
+        // Open the Upload modal
+        setIsUploadModalOpen(true);
+
+        // Reset input value
+        if (imageInputRef.current) {
+            imageInputRef.current.value = null;
+        }
+    }
 
     function onEmojiClick(emojiData) {
         setMessage(prev => prev + emojiData.emoji);
@@ -230,15 +259,15 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
 
                                     {showAttach && (
                                         <div className="absolute bottom-14.5 left-0 z-50 transition mx-3 py-2 rounded-lg bg-zinc-900/98">
-                                            <label className="flex text-md gap-5 items-center w-50 hover:bg-zinc-800 px-4 py-2 cursor-pointer" onClick={() => setShowAttach(false)}>
+                                            <label className="flex text-md gap-5 items-center w-50 hover:bg-zinc-800 px-4 py-2 cursor-pointer">
                                                 <Image size={30} className="text-white" strokeWidth="1px" />
                                                 <span className="text-white font-light">Image</span>
-                                                <input type="file" multiple className="hidden" accept='image/*' />
+                                                <input type="file" multiple ref={imageInputRef} className="hidden" onChange={handleUpload} accept='image/*' />
                                             </label>
-                                            <label className="flex text-md gap-5 items-center w-50 hover:bg-zinc-800 px-4 py-2 cursor-pointer" onClick={() => setShowAttach(false)}>
+                                            <label className="flex text-md gap-5 items-center w-50 hover:bg-zinc-800 px-4 py-2 cursor-pointer">
                                                 <File size={30} className="text-white" strokeWidth="1px" />
                                                 <span className="text-white font-light">Files</span>
-                                                <input type="file" multiple  className="hidden" accept="application/*" />
+                                                <input type="file" multiple  className="hidden" onChange={handleUpload} accept="application/*" />
                                             </label>
                                         </div>
                                     )}
@@ -247,6 +276,61 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                         </div>
                     )}
                 </div>
+
+                {isUploadModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p4 text-white">
+                        <div className="bg-zinc-900 w-full max-w-2xl rounded-xl overflow-hidden flex flex-col max-h-[90vh]">
+                            <div className="p-4 border-b border-zinc-800 flex justify-between items-center">
+                                <h3 className="text-white font-semibold">Send {selectedFiles.length} images</h3>
+                                <button onClick={() => (setIsUploadModalOpen(false), setSelectedFiles([]))}>
+                                    <X className="text-zinc-400 hover:text-zinc-500" />
+                                </button>
+                            </div>
+
+                            {/* Image preview grid */}
+                            <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-2">
+                                {previews.map((url, index) => (
+                                    <div className="group relative" onClick={() => setSelectedImg(url)}>
+                                        <img key={index} src={url} className="w-full h-40 object-cover rounded-lg cursor-pointer" alt="Preview" />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex justify-end items-start">
+                                            <button className="cursor-pointer p-2">
+                                                <Trash2 />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Caption */}
+                            <div className="fade-in p-2 mb-1 mx-3 bg-zinc-900 border-t border-zinc-800 rounded-4xl">
+                                <form className="flex items-center gap-3 px-3">
+                                    <label className="w-9 h-9 cursor-pointer flex items-center justify-center text-zinc-400 hover:text-zinc-200 transition rounded-4xl" title="Add">
+                                        <ImagePlus size={22} />
+                                        <input type="file" multiple  className="hidden" accept="images/*" />
+                                    </label>
+
+                                    <div className="flex-1">
+                                        <textarea autoFocus value={caption} onChange={e => setCaption(e.target.value)} rows={1} placeholder="Add a caption..." className="w-full bg-transparent outline-none border-none focus:outline-none focus:ring-0 text-white resize-none max-h-40 box-border overflow-y-auto transition"></textarea>
+                                    </div>
+
+                                    <button type="submit" className={`w-9 h-9 flex items-center justify-center text-indigo-600 rounded-4xl transition p-2 cursor-pointer font-bold`}>
+                                        Send
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Fullscreen View */}
+                {selectedImg && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
+                        <button onClick={() => setSelectedImg(null)} className="absolute top-6 right-6 text-white hover:text-gray-300 transition-colors">
+                            <X className='cursor-pointer' size={40} />
+                        </button>
+                        <img src={selectedImg} alt="Fullscreen view" className="max-w-full text-white max-h-[90vh] rounded-lg object-contain" />
+                    </div>
+                )}
             </div>
         </>
     )
