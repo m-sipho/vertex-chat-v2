@@ -1,4 +1,4 @@
-import { MessageCircleMore, ArrowLeft, Paperclip, Send, ChevronDown, Smile, Image, File, X, Trash2, ImagePlus } from "lucide-react"
+import { MessageCircleMore, ArrowLeft, Paperclip, Send, ChevronDown, Smile, Image, File, X, ImagePlus } from "lucide-react"
 import RoomHeader from "../components/RoomHeader"
 import { useEffect, useState, useRef } from "react";
 import EmojiPicker from "emoji-picker-react"
@@ -19,7 +19,24 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
     const [caption, setCaption] = useState("");
     const imageInputRef = useRef(null);
     const [selectedImg, setSelectedImg] = useState(null);
-    
+
+    const addImages = async (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+
+        setSelectedFiles(prev => (
+            [...prev, ...files]
+        ));
+
+        // Create temporary URLs to see added images in the modal
+        const filePreviews = files.map(file =>
+            URL.createObjectURL(file)
+        );
+
+        setPreviews(prev => (
+            [...prev, ...filePreviews]
+        ));
+    }
 
     const handleUpload = async (e) => {
         const files = Array.from(e.target.files);
@@ -292,9 +309,9 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                                 {previews.map((url, index) => (
                                     <div className="group relative" onClick={() => setSelectedImg(url)}>
                                         <img key={index} src={url} className="w-full h-40 object-cover rounded-lg cursor-pointer" alt="Preview" />
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex justify-end items-start">
-                                            <button className="cursor-pointer p-2">
-                                                <Trash2 />
+                                        <div className="absolute right-0 top-0 rounded-lg m-1.5 bg-black/40 transition-all z-50 flex justify-end items-start">
+                                            <button className="cursor-pointer hover:text-zinc-300 p-2">
+                                                <X size={15} />
                                             </button>
                                         </div>
                                     </div>
@@ -306,7 +323,7 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                                 <form className="flex items-center gap-3 px-3">
                                     <label className="w-9 h-9 cursor-pointer flex items-center justify-center text-zinc-400 hover:text-zinc-200 transition rounded-4xl" title="Add">
                                         <ImagePlus size={22} />
-                                        <input type="file" multiple  className="hidden" accept="images/*" />
+                                        <input type="file" multiple  className="hidden" onChange={addImages} accept="image/*" />
                                     </label>
 
                                     <div className="flex-1">
