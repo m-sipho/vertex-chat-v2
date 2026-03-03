@@ -20,6 +20,25 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
     const imageInputRef = useRef(null);
     const [selectedImg, setSelectedImg] = useState(null);
 
+    useEffect(() => {
+        // Close the modal when no files selected
+        if (selectedFiles.length === 0 && isUploadModalOpen) {
+            setIsUploadModalOpen(false);
+        }
+    }, [selectedFiles, previews])
+
+    const handleRemovingImage = async (indexToRemove) => {
+        // Remove the clicked image
+        setSelectedFiles(prev => prev.filter((_, index) => index !== indexToRemove));
+
+        setPreviews(prev => {
+            // Revoke to free up memory on device
+            URL.revokeObjectURL(prev[indexToRemove]);
+
+            return prev.filter((_, index) => index !== indexToRemove);
+        });
+    }
+
     const addImages = async (e) => {
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
@@ -298,7 +317,7 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p4 text-white">
                         <div className="bg-zinc-900 w-full max-w-2xl rounded-xl overflow-hidden flex flex-col max-h-[90vh]">
                             <div className="p-4 border-b border-zinc-800 flex justify-between items-center">
-                                <h3 className="text-white font-semibold">Send {selectedFiles.length} images</h3>
+                                <h3 className="text-white font-semibold">Send {selectedFiles.length} {selectedFiles.length === 1 ? 'image' : 'images'}</h3>
                                 <button onClick={() => (setIsUploadModalOpen(false), setSelectedFiles([]))}>
                                     <X className="text-zinc-400 hover:text-zinc-500" />
                                 </button>
@@ -310,7 +329,7 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                                     <div className="group relative" onClick={() => setSelectedImg(url)}>
                                         <img key={index} src={url} className="w-full h-40 object-cover rounded-lg cursor-pointer" alt="Preview" />
                                         <div className="absolute right-0 top-0 rounded-lg m-1.5 bg-black/40 transition-all z-50 flex justify-end items-start">
-                                            <button className="cursor-pointer hover:text-zinc-300 p-2">
+                                            <button className="cursor-pointer hover:text-zinc-300 p-2" onClick={(e) => {e.stopPropagation(); handleRemovingImage(index)}}>
                                                 <X size={15} />
                                             </button>
                                         </div>
