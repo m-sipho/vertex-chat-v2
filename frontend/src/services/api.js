@@ -1,3 +1,5 @@
+import axios from "axios";
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
 // Send requests to the backend with JWT Athentication
@@ -109,4 +111,35 @@ export async function rejectUser(roomCode, targetUsername) {
             target_username: targetUsername
         })
     });
+}
+
+export async function uploadImages(roomCode, file, onUploadProgress) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const token = sessionStorage.getItem("token");
+
+    try {
+        const response = await axios.post(
+            `${API_URL}/assets/upload/${roomCode}`,
+            formData,
+            {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                },
+                onUploadProgress: (progressEvent) => {
+                    if (onUploadProgress) {
+                        const percentCompleted = Math.round(
+                            (progressEvent.loaded * 100) / progressEvent.total
+                        );
+                        onUploadProgress(percentCompleted);
+                    }
+                }
+            }
+        );
+
+        return response.data;
+    } catch (error) {
+        throw new Error("Upload failed");
+    }
 }
