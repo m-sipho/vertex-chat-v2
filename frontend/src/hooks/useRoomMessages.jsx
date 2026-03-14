@@ -80,6 +80,7 @@ export function useRoomMessages(tokenValue, myRooms) {
                         switch (data.type) {
                             case "chat":
                             case "system":
+                            case "image":
                                 setIsLoading(false);
                                 return {
                                     ...prev,
@@ -133,6 +134,7 @@ export function useRoomMessages(tokenValue, myRooms) {
         textareaRef,
         roomMessages,
         isLoading,
+        socketsRef,
         setMessage,
         handleSendMessage
     }

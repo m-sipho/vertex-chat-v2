@@ -1,9 +1,11 @@
-import { MessageCircleMore, ArrowLeft, Paperclip, Send, ChevronDown, Smile, Image, File, X, ImagePlus } from "lucide-react"
+import { MessageCircleMore, ArrowLeft, Paperclip, Send, ChevronDown, Smile, Image, File, X, ImagePlus, Check, LoaderCircle } from "lucide-react"
 import RoomHeader from "../components/RoomHeader"
 import { useEffect, useState, useRef } from "react";
 import EmojiPicker from "emoji-picker-react"
+import { uploadImages } from "../services/api";
+import CircularProgress from "./CircularProgress";
 
-function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSeenConfig, handleSendMessage, selectedRoom, isRoomOpen, pendingRequests, handleApprove, handleReject, currentMessages, displayName, previousLastSeen, textareaRef, setMessage, message }) {
+function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSeenConfig, handleSendMessage, selectedRoom, isRoomOpen, pendingRequests, handleApprove, handleReject, currentMessages, displayName, previousLastSeen, textareaRef, setMessage, message, socketsRef }) {
 
     const scrollContainerRef = useRef(null);
     const [isAtBottom, setIsAtBottom] = useState(true);
@@ -19,6 +21,8 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
     const [caption, setCaption] = useState("");
     const imageInputRef = useRef(null);
     const [selectedImg, setSelectedImg] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState({});
 
     useEffect(() => {
         // Close the modal when no files selected
@@ -26,6 +30,115 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
             setIsUploadModalOpen(false);
         }
     }, [selectedFiles, previews])
+
+    async function handleUploadImages(roomCode, optimisticMsg) {
+        if (selectedFiles.length === 0 || !roomCode) return;
+        setIsUploading(true);
+        setUploadProgress({});
+
+        const uploadPromises = selectedFiles.map(async (file, index) => {
+
+            setUploadProgress(prev => ({
+                    ...prev,
+                    [index]: 0
+                }));
+
+            try {
+                // Upload the specific file
+                const response = await uploadImages(roomCode, file, (fileProgress) => {
+                    console.log("FILE PROGRESS:", fileProgress)
+                    // Calculate total progress accross all files
+                    setUploadProgress(prev => ({
+                        ...prev,
+                        [index]: fileProgress
+                    }));
+                });
+                const s3Filename = response.data.filename;
+
+                // Turn of the loading state of this specific image
+                if (optimisticMsg && Array.isArray(optimisticMsg.isUploading)) {
+                    optimisticMsg.isUploading[index] = false;
+                }
+
+                const messagePayload = {
+                    type: "image",
+                    message: s3Filename,
+                    // room_code: roomCode,
+                    // timestamp: new Date().toISOString()
+                };
+
+                // Notify the room via WebSocket
+                const roomSocket = socketsRef.current[roomCode];
+                if (roomSocket && roomSocket.readyState === WebSocket.OPEN) {
+                    roomSocket.send(JSON.stringify(messagePayload));
+
+                    // Update that the image has been sent to the room
+                    if (optimisticMsg && Array.isArray(optimisticMsg.isSent)) {
+                        optimisticMsg.isSent[index] = true;
+                    }
+                }
+
+                return { success: true, filename: s3Filename };
+                
+            } catch (error) {
+                console.error(`Failed to upload ${file.name}:`, error);
+                return { success: false, filename: file.name, error };
+            } finally {
+                // setUploadProgress(prev => ({
+                //     ...prev,
+                //     [index]: 0
+                // }));
+            }
+        });
+
+        try {
+            // Send all uploads at once and wait for group to finish
+            const results = await Promise.all(uploadPromises);
+            
+            // Check if any uploads failed
+            const failures = results.filter(r => !r.success);
+            
+            if (failures.length > 0) {
+                alert(`Failed to upload ${failures.length} image(s). Check console for details.`);
+            } else {
+                console.log("All files uploaded successfully");
+            }
+            
+            setCaption("");
+        } catch (error) {
+            console.error("Upload batch error:", error);
+            alert("Upload process failed unexpectedly. Check console for details.");
+        } finally {
+            setIsUploading(false);
+        }
+    }
+
+    async function handleSendingImages(e) {
+        e.preventDefault();
+        if (isUploading) {
+            alert("Upload in progress, please wait...");
+            return;
+        }
+
+        const optimisticMsg = {
+            type: "image_preview",
+            caption: caption,
+            localPreviews: [...previews],
+            username: displayName,
+            isUploading: previews.map(() => true),
+            isSent: previews.map(() => false)
+        }
+        
+        currentMessages.push(optimisticMsg);
+        console.log("CURRENT MESSAGES:", currentMessages);
+        
+        setIsUploadModalOpen(false);
+
+        await handleUploadImages(selectedRoom?.room_code, optimisticMsg);
+        // Clear the selected files after upload
+        setSelectedFiles([]);
+        setPreviews([]);
+    }
 
     const handleRemovingImage = async (indexToRemove) => {
         // Remove the clicked image
@@ -77,6 +190,8 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
         if (imageInputRef.current) {
             imageInputRef.current.value = null;
         }
+
+        setShowAttach(false);
     }
 
     function onEmojiClick(emojiData) {
@@ -248,6 +363,67 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                                                     </div>
                                                 </div>
                                             )
+                                        } else if (msg.type === "image_preview") {
+                                            const author = msg.user || msg.username || "Unknown";
+                                            const isMe = author === displayName;
+
+                                            // Check if the previous message was by the same person
+                                            const previousMsg = index > 0 ? currentMessages[index - 1]: null;
+                                            const isSameAsPrevious = previousMsg && (previousMsg.user || previousMsg.username) === author;
+
+                                            const displaySources = msg.localPreviews;
+
+                                            return (
+                                                <div ref={isLastSeenPoint ? lastSeenMessageRef : null} key={index} className={`w-full flex ${isMe ? "justify-end" : "justify-start gap-2.5"} px-8 my-2`}>
+                                                    {!isMe && !isSameAsPrevious ? (
+                                                        <img className="w-9 h-9" src={`https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${msg.avatar_seed}&radius=50`} alt="avatar"/>
+                                                    ) : (
+                                                        !isMe && (
+                                                            <div className="w-9 shrink-0"></div>
+                                                        )
+                                                    )}
+                                                    <div className={`flex flex-col rounded-xl max-w-[50%] md:max-w-[55%] overflow-hidden ${isMe ? `bg-indigo-600 text-white rounded-tr-none ${isSameAsPrevious ? "rounded-tr-xl": "rounded-tr-none"}`: `bg-zinc-800 text-zinc-200 rounded-tl-none ${isSameAsPrevious ? "rounded-tl-xl": "rounded-tl-none"}`}`}>
+                                                        <div className={`grid gap-0.5 p-0.5 ${displaySources.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                                                            {displaySources.map((src, index) => {
+                                                                // if the total of images is odd, make the width of first image full
+                                                                const isFirstOfOdd = displaySources.length > 1 && displaySources.length % 2 !== 0 && index === 0;
+
+                                                                return (
+                                                                    <div key={index} className={`relative overflow-hidden rounded-xl w-full bg-zinc-900/50 ${isFirstOfOdd ? 'col-span-2 w-full aspect-video' : ''} ${displaySources.length === 1 ? 'h-64' : 'h-40 aspect-square'}`}>
+                                                                        {msg.localPreviews ? (
+                                                                            // Sender sees local blob immediately
+                                                                            <>
+                                                                                <img className="w-full h-full object-cover" src={src} alt='Uploading' />
+                                                                                {msg.isUploading[index] && uploadProgress[index] < 100 && (
+                                                                                    <CircularProgress progress={uploadProgress[index]} />
+                                                                                )}
+
+                                                                                {/* 100% but not sent yet */}
+                                                                                {uploadProgress[index] === 100 && isUploading && !msg.isSent[index] && (
+                                                                                    <div className="absolute bottom-1.5 right-1.5 backdrop-blur-md rounded-full flex items-end justify-end bg-black/40 p-0.5">
+                                                                                        <LoaderCircle size={15} className="text-white animate-spin opacity-50" />
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* Sent phase */}
+                                                                                {msg.isSent[index] && (
+                                                                                    <div className="absolute bottom-1.5 right-1.5 bg-black/40 backdrop-blur-md p-0.5 rounded-full flex items-end justify-end">
+                                                                                        <Check size={14} className="tezt-zinc-200" strokeWidth={3} />
+                                                                                    </div>
+                                                                                )}
+                                                                            </>
+                                                                        ) : 'Receiver fetch from S3'}
+
+                                                                    </div>
+                                                                )
+                                                            })}
+                                                        </div>
+                                                        {msg.caption && (
+                                                            <div className="px-3 py-2 text-sm font-medium">{msg.caption}</div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )
                                         }
                                     })
                                 )}
@@ -317,9 +493,11 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p4 text-white">
                         <div className="bg-zinc-900 w-full max-w-2xl rounded-xl overflow-hidden flex flex-col max-h-[90vh]">
                             <div className="p-4 border-b border-zinc-800 flex justify-between items-center">
-                                <h3 className="text-white font-semibold">Send {selectedFiles.length} {selectedFiles.length === 1 ? 'image' : 'images'}</h3>
-                                <button onClick={() => (setIsUploadModalOpen(false), setSelectedFiles([]))}>
-                                    <X className="text-zinc-400 hover:text-zinc-500" />
+                                <div>
+                                    <h3 className="text-white font-semibold">Send {selectedFiles.length} {selectedFiles.length === 1 ? 'image' : 'images'}</h3>
+                                </div>
+                                <button onClick={() => !isUploading && (setIsUploadModalOpen(false), setSelectedFiles([]))} disabled={isUploading}>
+                                    <X className="text-zinc-400 hover:text-zinc-500 disabled:opacity-50" />
                                 </button>
                             </div>
 
@@ -329,8 +507,8 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                                     <div className="group relative" onClick={() => setSelectedImg(url)}>
                                         <img key={index} src={url} className="w-full h-40 object-cover rounded-lg cursor-pointer" alt="Preview" />
                                         <div className="absolute right-0 top-0 rounded-lg m-1.5 bg-black/40 transition-all z-50 flex justify-end items-start">
-                                            <button className="cursor-pointer hover:text-zinc-300 p-2" onClick={(e) => {e.stopPropagation(); handleRemovingImage(index)}}>
-                                                <X size={15} />
+                                            <button className="cursor-pointer hover:text-zinc-300 p-2" onClick={(e) => {e.stopPropagation(); handleRemovingImage(index)}} disabled={isUploading}>
+                                                <X size={15} className="disabled:opacity-50" />
                                             </button>
                                         </div>
                                     </div>
@@ -339,18 +517,18 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
 
                             {/* Caption */}
                             <div className="fade-in p-2 mb-1 mx-3 bg-zinc-900 border-t border-zinc-800 rounded-4xl">
-                                <form className="flex items-center gap-3 px-3">
-                                    <label className="w-9 h-9 cursor-pointer flex items-center justify-center text-zinc-400 hover:text-zinc-200 transition rounded-4xl" title="Add">
+                                <form onSubmit={handleSendingImages} className="flex items-center gap-3 px-3">
+                                    <label className="w-9 h-9 cursor-pointer flex items-center justify-center text-zinc-400 hover:text-zinc-200 transition rounded-4xl disabled:opacity-50" title="Add">
                                         <ImagePlus size={22} />
-                                        <input type="file" multiple  className="hidden" onChange={addImages} accept="image/*" />
+                                        <input type="file" multiple className="hidden" onChange={addImages} accept="image/*" disabled={isUploading} />
                                     </label>
 
                                     <div className="flex-1">
-                                        <textarea autoFocus value={caption} onChange={e => setCaption(e.target.value)} rows={1} placeholder="Add a caption..." className="w-full bg-transparent outline-none border-none focus:outline-none focus:ring-0 text-white resize-none max-h-40 box-border overflow-y-auto transition"></textarea>
+                                        <textarea autoFocus value={caption} onChange={e => setCaption(e.target.value)} rows={1} placeholder="Add a caption..." className="w-full bg-transparent outline-none border-none focus:outline-none focus:ring-0 text-white resize-none max-h-40 box-border overflow-y-auto transition" disabled={isUploading}></textarea>
                                     </div>
 
-                                    <button type="submit" className={`w-9 h-9 flex items-center justify-center text-indigo-600 rounded-4xl transition p-2 cursor-pointer font-bold`}>
-                                        Send
+                                    <button type="submit" disabled={isUploading} className={`w-9 h-9 flex items-center justify-center text-indigo-600 rounded-4xl transition p-2 cursor-pointer font-bold ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                        {isUploading ? '...' : 'Send'}
                                     </button>
                                 </form>
                             </div>

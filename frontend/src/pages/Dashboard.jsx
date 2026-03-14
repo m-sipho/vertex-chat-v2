@@ -18,7 +18,7 @@ function Dashboard() {
 
         return saved ? JSON.parse(saved) : {}
     });
-    const {message, textareaRef, roomMessages, isLoading, setMessage, handleSendMessage} = useRoomMessages(token, myRooms);
+    const {message, textareaRef, roomMessages, isLoading, socketsRef, setMessage, handleSendMessage} = useRoomMessages(token, myRooms);
     const currentMessages = roomMessages[selectedRoom?.room_code] || [];
     const [previousLastSeen, setPreviousLastSeen] = useState(null);
 
@@ -83,7 +83,7 @@ function Dashboard() {
                     )}
                 </div>
 
-                <MessageRoom setSelectedRoom={setSelectedRoom} setIsRoomOpen={setIsRoomOpen} setLastSeenConfig={setLastSeenConfig} lastSeenConfig={lastSeenConfig} handleSendMessage={handleSendMessage} selectedRoom={selectedRoom} isRoomOpen={isRoomOpen} pendingRequests={pendingRequests} handleApprove={handleApprove} handleReject={handleReject} currentMessages={currentMessages} displayName={displayName} previousLastSeen={previousLastSeen} textareaRef={textareaRef} setMessage={setMessage} message={message} />
+                <MessageRoom setSelectedRoom={setSelectedRoom} setIsRoomOpen={setIsRoomOpen} setLastSeenConfig={setLastSeenConfig} lastSeenConfig={lastSeenConfig} handleSendMessage={handleSendMessage} selectedRoom={selectedRoom} isRoomOpen={isRoomOpen} pendingRequests={pendingRequests} handleApprove={handleApprove} handleReject={handleReject} currentMessages={currentMessages} displayName={displayName} previousLastSeen={previousLastSeen} textareaRef={textareaRef} setMessage={setMessage} message={message} socketsRef={socketsRef} />
             </div>
 
             {isModalOpen && (
