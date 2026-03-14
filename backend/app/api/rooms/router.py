@@ -337,6 +337,19 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str, db: AsyncSess
 
                     # Save the message in memory
                     await global_manager.add_message_to_history(room_code, user.display_name, message, "chat", user_result.avatar_seed, current_time)
+                
+                elif event_type == 'image':
+                    message = event.get('message')
+                    if not message:
+                        continue
+
+                    current_time = datetime.now(timezone.utc).isoformat()
+
+                    # Broadcast image(s) to the room
+                    await ws_manager.broadcast_image_message(room_code, user.display_name, user_result.avatar_seed, message, current_time)
+
+                    # Save image(s) in memory
+                    await global_manager.add_message_to_history(room_code, user.display_name, message, "image", user_result.avatar_seed, current_time)
 
                 elif event_type == 'typing':
                     ws_manager.broadcast_typing(room_code, user.display_name, websocket)

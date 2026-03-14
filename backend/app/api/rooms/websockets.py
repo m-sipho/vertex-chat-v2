@@ -140,6 +140,17 @@ class ConnectionManager:
         }
         await self._broadcast(payload, room_code)
     
+    async def broadcast_image_message(self, room_code: str, username: str, avatar_seed: str, filename: str, timestamp: str):
+        """Sending an image"""
+        payload = {
+            "type": 'image',
+            'username': username,
+            'avatar_seed': avatar_seed,
+            'message': filename,
+            'timestamp': timestamp
+        }
+        await self._broadcast(payload, room_code)
+    
 
     async def broadcast_system_message(self, room_code: str, message: str):
         """System alert (e.g. Thabang left the room)"""
