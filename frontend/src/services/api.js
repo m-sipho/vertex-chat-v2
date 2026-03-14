@@ -113,7 +113,7 @@ export async function rejectUser(roomCode, targetUsername) {
     });
 }
 
-export async function uploadImages(roomCode, file, onUploadProgress) {
+export async function uploadImages(roomCode, file, setUploadProgress) {
     const formData = new FormData();
     formData.append("file", file);
 
@@ -128,11 +128,19 @@ export async function uploadImages(roomCode, file, onUploadProgress) {
                     "Authorization": `Bearer ${token}`
                 },
                 onUploadProgress: (progressEvent) => {
-                    if (onUploadProgress) {
+                    const { loaded, total } = progressEvent;
+                    const percent = Math.round((loaded * 100) / total);
+                    
+                    console.log(
+                        `[UPLOAD] File: ${file.name} | Progress: ${percent}% | ` +
+                        `Sent: ${(loaded / 1024 / 1024).toFixed(2)}MB / ${(total / 1024 / 1024).toFixed(2)}MB`
+                    );
+                    
+                    if (setUploadProgress) {
                         const percentCompleted = Math.round(
                             (progressEvent.loaded * 100) / progressEvent.total
                         );
-                        onUploadProgress(percentCompleted);
+                        setUploadProgress(percentCompleted);
                     }
                 }
             }
