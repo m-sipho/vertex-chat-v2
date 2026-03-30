@@ -151,3 +151,8 @@ export async function uploadImages(roomCode, file, setUploadProgress) {
         throw new Error("Upload failed");
     }
 }
+
+export async function getPresignedUrl(roomCode, filename) {
+    const response = await axios.get(`${API_URL}/assets/presigned/${roomCode}/${filename}`);
+    return response.url;
+}
