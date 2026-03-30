@@ -24,3 +24,23 @@ async def upload(room_code: str, current_user: Annotated[UserData, Depends(get_c
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Failed to upload"
         )
+    
+@router.get("presigned/{room_code}/{filename}")
+async def get_presigned_url(room_code: str, filename: str, current_user: Annotated[UserData, Depends(get_current_user)]):
+    try:
+        # Verify the room exists and user has access
+        room_state = await global_manager.get_room_state(room_code)
+        if not room_state:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Room not found"
+            )
+        
+        url = assets_service.generate_presigned_url(room_code, filename)
+        return {"url": url}
+    
+    except ClientError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Failed to generate URL"
+        )

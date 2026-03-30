@@ -63,3 +63,14 @@ class AssetsService:
             "width": width,
             "height": height
         }
+    
+    def generate_presigned_url(self, room_code: str, filename: str, expiry: int = 3600) -> str:
+        """Generate a presigned URL for viewing an S3 object"""
+        s3_key = f"rooms/{room_code}/{filename}"
+        url = self.s3_client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": self.bucket_name, "Key": s3_key},
+            ExpiresIn=expiry
+        )
+
+        return url
