@@ -25,7 +25,7 @@ async def upload(room_code: str, current_user: Annotated[UserData, Depends(get_c
             detail="Failed to upload"
         )
     
-@router.get("presigned/{room_code}/{filename}")
+@router.get("/presigned/{room_code}/{filename}")
 async def get_presigned_url(room_code: str, filename: str, current_user: Annotated[UserData, Depends(get_current_user)]):
     try:
         # Verify the room exists and user has access
