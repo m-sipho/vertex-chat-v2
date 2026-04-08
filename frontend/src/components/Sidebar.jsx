@@ -1,4 +1,4 @@
-import { Plus, Hash, User, Users, Loader, Settings } from "lucide-react";
+import { Plus, Hash, User, Users, Loader, Settings, Image } from "lucide-react";
 
 function Sidebar({ seed, displayName, setModalOpen, myRooms, roomMessages, isRoomOpen, selectedRoom, isLoading, requestedRooms, sidebarLoading, setSelectedRoom, setIsRoomOpen, setPreviousLastSeen, setLastSeenConfig, lastSeenConfig, unreadCounts }) {
 
@@ -67,6 +67,7 @@ function Sidebar({ seed, displayName, setModalOpen, myRooms, roomMessages, isRoo
 
                                 const messages = roomMessages[myRoom.room_code] || [];
                                 const lastMessage = messages[messages.length - 1] || "";
+                                console.log("LAST MESSAGE:", lastMessage);
 
                                 const author = lastMessage.user || lastMessage.username || "";
                                 const isMe = author === displayName;
@@ -92,14 +93,23 @@ function Sidebar({ seed, displayName, setModalOpen, myRooms, roomMessages, isRoo
                                         
                                         <div className="flex items-center justify-between gap-1.5 text-xs text-zinc-400 ml-5.5 h-4">
                                             {!isLoading ? (
-                                                <p className="truncate flex-1 min-w-0 space-x-1">
-                                                    {lastMessage.type === "chat" && (
+                                                <p className="flex truncate flex-1 min-w-0 space-x-1">
+                                                    {(lastMessage.type === "chat" || lastMessage.type === "image") && (
                                                         <span className="text-indigo-300 font-medium">
                                                             {isMe ? "You" : author}: 
                                                         </span>
                                                     )}
                                                     <span className={lastMessage.type === "system" ? "text-indigo-400 italic" : "text-zinc-400"}>
-                                                        {lastMessage.message}
+                                                        {lastMessage.type === "image" ? (
+                                                            <span className="flex items-center gap-2">
+                                                                <Image size={12} className="text-zinc-400 shrink-0" />
+                                                                <span>
+                                                                    {`${lastMessage.message.length || 1} photo${lastMessage.message.length !== 1 ? 's' : ''}`}
+                                                                </span>
+                                                            </span>
+                                                        ) : (
+                                                            lastMessage.message
+                                                        )}
                                                     </span>
                                                 </p>
                                                 ) : (
