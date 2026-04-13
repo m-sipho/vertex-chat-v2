@@ -140,13 +140,14 @@ class ConnectionManager:
         }
         await self._broadcast(payload, room_code)
     
-    async def broadcast_image_message(self, room_code: str, username: str, avatar_seed: str, filename: str, timestamp: str):
+    async def broadcast_image_message(self, room_code: str, username: str, avatar_seed: str, filename: str, caption: str, timestamp: str):
         """Sending an image"""
         payload = {
             "type": 'image',
             'username': username,
             'avatar_seed': avatar_seed,
             'message': filename,
+            'caption': caption,
             'timestamp': timestamp
         }
         await self._broadcast(payload, room_code)

@@ -125,7 +125,7 @@ class RoomManager:
         raise NoAvailableRoomError("No available rooms")
     
 
-    async def add_message_to_history(self, room_code: str, username: str, text: str, type: str, avatar_seed: str = None, timestamp: str = None):
+    async def add_message_to_history(self, room_code: str, username: str, text: str, type: str, avatar_seed: str = None, caption: str = None, timestamp: str = None):
         """Save messages in memory"""
         if timestamp != None:
             message_data = {
@@ -133,6 +133,7 @@ class RoomManager:
                 'user': username,
                 'avatar_seed': avatar_seed,
                 'message': text,
+                'caption': caption,
                 'timestamp': timestamp
             }
         else:
