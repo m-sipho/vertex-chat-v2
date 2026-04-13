@@ -153,6 +153,14 @@ export async function uploadImages(roomCode, file, setUploadProgress) {
 }
 
 export async function getPresignedUrl(roomCode, filename) {
-    const response = await axios.get(`${API_URL}/assets/presigned/${roomCode}/${filename}`);
-    return response.url;
+    const token = sessionStorage.getItem("token");
+    const response = await axios.get(
+        `${API_URL}/assets/presigned/${roomCode}/${filename}`,
+        {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        }
+    );
+    return response.data.url;
 }
