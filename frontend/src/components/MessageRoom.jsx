@@ -1,9 +1,10 @@
-import { MessageCircleMore, ArrowLeft, Paperclip, Send, ChevronDown, Smile, Image, File, X, ImagePlus, Check, LoaderCircle } from "lucide-react"
+import { MessageCircleMore, ArrowLeft, Paperclip, Send, ChevronDown, Smile, Image, File, X, ImagePlus, Check, LoaderCircle, Clock } from "lucide-react"
 import RoomHeader from "../components/RoomHeader"
 import { useEffect, useState, useRef } from "react";
 import EmojiPicker from "emoji-picker-react"
 import { uploadImages } from "../services/api";
 import CircularProgress from "./CircularProgress";
+import { ImageMessage } from "./ImageMessage";
 
 function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSeenConfig, handleSendMessage, selectedRoom, isRoomOpen, pendingRequests, handleApprove, handleReject, currentMessages, displayName, previousLastSeen, textareaRef, setMessage, message, socketsRef }) {
 
@@ -39,9 +40,9 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
         const uploadPromises = selectedFiles.map(async (file, index) => {
 
             setUploadProgress(prev => ({
-                    ...prev,
-                    [index]: 0
-                }));
+                ...prev,
+                [index]: 0
+            }));
 
             try {
                 // Upload the specific file
@@ -55,27 +56,14 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                 });
                 const s3Filename = response.data.filename;
 
-                // Turn of the loading state of this specific image
+                // Turn off the loading state of this specific image
                 if (optimisticMsg && Array.isArray(optimisticMsg.isUploading)) {
                     optimisticMsg.isUploading[index] = false;
                 }
 
-                const messagePayload = {
-                    type: "image",
-                    message: s3Filename,
-                    // room_code: roomCode,
-                    // timestamp: new Date().toISOString()
-                };
-
-                // Notify the room via WebSocket
-                const roomSocket = socketsRef.current[roomCode];
-                if (roomSocket && roomSocket.readyState === WebSocket.OPEN) {
-                    roomSocket.send(JSON.stringify(messagePayload));
-
-                    // Update that the image has been sent to the room
-                    if (optimisticMsg && Array.isArray(optimisticMsg.isSent)) {
-                        optimisticMsg.isSent[index] = true;
-                    }
+                // Mark this specific image as sent. Ready to send via WebSocket
+                if (optimisticMsg && Array.isArray(optimisticMsg.isSent)) {
+                    optimisticMsg.isSent[index] = true;
                 }
 
                 return { success: true, filename: s3Filename };
@@ -83,11 +71,6 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
             } catch (error) {
                 console.error(`Failed to upload ${file.name}:`, error);
                 return { success: false, filename: file.name, error };
-            } finally {
-                // setUploadProgress(prev => ({
-                //     ...prev,
-                //     [index]: 0
-                // }));
             }
         });
 
@@ -100,8 +83,24 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
             
             if (failures.length > 0) {
                 alert(`Failed to upload ${failures.length} image(s). Check console for details.`);
-            } else {
-                console.log("All files uploaded successfully");
+                return;
+            }
+
+            // Collect all filenames in original order
+            const filenames = results
+                .sort((a, b) => a.index - b.index)
+                .map(r => r.filename)
+
+            const messagePayload = {
+                type: "image",
+                message: filenames,
+                caption: caption,
+            };
+
+            // Notify the room via WebSocket
+            const roomSocket = socketsRef.current[roomCode];
+            if (roomSocket && roomSocket.readyState === WebSocket.OPEN) {
+                roomSocket.send(JSON.stringify(messagePayload));
             }
             
             setCaption("");
@@ -130,7 +129,6 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
         }
         
         currentMessages.push(optimisticMsg);
-        console.log("CURRENT MESSAGES:", currentMessages);
         
         setIsUploadModalOpen(false);
 
@@ -360,6 +358,13 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                                                             <span className={`text-sm ${isMe ? 'text-zinc-200/90' : 'text-zinc-300'} text-end`}>{localTime}</span>
                                                         </div>
                                                         <div className={`text-sm ${isMe ? "text-white" : "text-zinc-400"} font-semibold whitespace-pre-wrap`}>{msg.message}</div>
+
+                                                        {isMe && (
+                                                            <div className="flex items-center gap-1 shrink-0 ml-auto">
+                                                                <Check size={11} strokeWidth={3} className="text-white/70" />
+                                                                <span className="text-[11px] text-white/55">Sent</span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             )
@@ -372,6 +377,8 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                                             const isSameAsPrevious = previousMsg && (previousMsg.user || previousMsg.username) === author;
 
                                             const displaySources = msg.localPreviews;
+
+                                            const allSent = msg.isSent?.every(Boolean);
 
                                             return (
                                                 <div ref={isLastSeenPoint ? lastSeenMessageRef : null} key={index} className={`w-full flex ${isMe ? "justify-end" : "justify-start gap-2.5"} px-8 my-2`}>
@@ -390,6 +397,7 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
 
                                                                 return (
                                                                     <div key={index} className={`relative overflow-hidden rounded-xl w-full bg-zinc-900/50 ${isFirstOfOdd ? 'col-span-2 w-full aspect-video' : ''} ${displaySources.length === 1 ? 'h-64' : 'h-40 aspect-square'}`}>
+                                                                        {/* <div>Hi I am Mthokozisi</div> */}
                                                                         {msg.localPreviews ? (
                                                                             // Sender sees local blob immediately
                                                                             <>
@@ -418,9 +426,94 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                                                                 )
                                                             })}
                                                         </div>
-                                                        {msg.caption && (
+                                                        {/* Caption and sent indicator */}
+                                                        <div className="flex items-end justify-between gap-2 px-2.5 pt-1.5 pb-2 min-h-8">
+                                                            {msg.caption && (
+                                                                <span className="text-sm font-medium leading-snug">
+                                                                    {msg.caption}
+                                                                </span>
+                                                            )}
+
+                                                            {allSent ? (
+                                                                <div className="flex items-center gap-1 shrink-0 ml-auto">
+                                                                    <Check size={11} strokeWidth={3} className="text-white/70" />
+                                                                    <span className="text-[11px] text-white/55">Sent</span>
+                                                                </div>
+                                                            ) : (
+                                                                <Clock size={11} strokeWidth={3} className="text-white/70 ml-auto" />
+                                                            )}
+                                                        </div>
+                                                        {/* {msg.caption && (
                                                             <div className="px-3 py-2 text-sm font-medium">{msg.caption}</div>
+                                                        )} */}
+                                                    </div>
+                                                </div>
+                                            )
+                                        } else if (msg.type === "image") {
+                                            console.log("IMAGE_GROUP:", msg);
+                                            const author = msg.user || msg.username || "Unknown";
+                                            const isMe = author === displayName;
+
+                                            const previousMsg = index > 0 ? currentMessages[index - 1] : null;
+                                            const isSameAsPrevious = previousMsg && (previousMsg.user || previousMsg.username) === author;
+
+                                            const date = new Date(msg.timestamp);
+                                            const localTime = date.toLocaleTimeString([], {
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                                hour12: false
+                                            })
+
+                                            const allSent = msg.isSent?.every(Boolean);
+
+                                            return (
+                                                <div ref={isLastSeenPoint ? lastSeenMessageRef : null} key={index} className={`w-full flex ${isMe ? "justify-end" : "justify-start gap-2.5"} px-8 my-2`}>
+                                                    {!isMe && !isSameAsPrevious ? (
+                                                        <img className="w-9 h-9" src={`https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${msg.avatar_seed}&radius=50`} alt="avatar" />
+                                                    ) : (
+                                                        !isMe && (
+                                                            <div className="w-9 shrink-0"></div>
+                                                        )
+                                                    )}
+                                                    <div className={`flex flex-col rounded-xl max-w-[40%] md:max-w-[45%] overflow-hidden ${isMe ? `bg-indigo-600 text-white ${isSameAsPrevious ? 'rounded-tr-xl' : 'rounded-tr-none'}` : `bg-zinc-800 text-zinc-200 ${isSameAsPrevious ? 'rounded-tl-xl' : 'rounded-tl-none'}`}`}>
+                                                        <div className="flex items-center space-x-2 px-3 pt-2">
+                                                            <span className={`text-sm ${isMe ? 'text-zinc-300' : 'text-white'} font-bold`}>
+                                                                {isMe ? "You" : author}
+                                                            </span>
+                                                            <span className={`text-sm ${isMe ? 'text-zinc-200/90' : 'text-zinc-300'} text-end`}>{localTime}</span>
+                                                        </div>
+
+                                                        <div className={`grid gap-0.5 p-0.5 ${msg.message.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+
+                                                            {msg.message.map((filename, index) => {
+                                                                const isFirstOdd = msg.message.length > 1 && msg.message.length % 2 !== 0 && index === 0;
+                                                                return (
+                                                                        <div key={index} className={`relative overflow-hidden rounded-xl w-full bg-zinc-900/50 ${isFirstOdd ? 'col-span-2 aspect-video' : ''} ${msg.message.length === 1 ? 'h-64' : 'h-40 aspect-square'}`}>
+                                                                            <ImageMessage filename={filename} roomCode={selectedRoom?.room_code} />
+                                                                        </div>
+                                                                )
+                                                            })}
+                                                            
+                                                        </div>
+                                                        {/* Caption and sent indicator */}
+                                                        {(msg.caption || isMe) && (
+                                                            <div className={`flex flex-col justify-between gap-2 px-2.5 pt-1.5 pb-2 min-h-8`}>
+                                                                {msg.caption && (
+                                                                    <span className="text-sm font-medium leading-snug mr-0">
+                                                                        {msg.caption}
+                                                                    </span>
+                                                                )}
+
+                                                                {isMe && (
+                                                                    <div className="flex items-center gap-1 shrink-0 ml-auto">
+                                                                        <Check size={11} strokeWidth={3} className="text-white/70" />
+                                                                        <span className="text-[11px] text-white/55">Sent</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         )}
+                                                        
+                                                        
                                                     </div>
                                                 </div>
                                             )
@@ -429,7 +522,6 @@ function MessageRoom({ setSelectedRoom, setIsRoomOpen, setLastSeenConfig, lastSe
                                 )}
                                 <div ref={messageEndRef} />
                             </div>
-
                             {/* Floating Chevron */}
                             {!isAtBottom && (
                                 <button onClick={() => (messageEndRef.current?.scrollIntoView({ behavior: "smooth" }))} className="fixed bottom-24 right-8 bg-zinc-800/60 text-white p-3 rounded-full hover:bg-zinc-800 transition-all flex items-center justify-center">
