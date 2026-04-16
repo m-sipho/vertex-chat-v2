@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from app.api.rooms.router import router as rooms_router
 from app.api.auth.router import router as auth_router
 from app.api.users.router import router as users_router
+from app.api.assets.router import router as asset_router
 from app.core.exceptions import (
     NoAvailableRoomError,
     UserAlreadyInRoomError,
@@ -29,6 +30,7 @@ app = FastAPI(title="Vertex Backend", lifespan=lifespan)
 
 origins = [
     "http://localhost:5173",
+    "http://localhost:4173"
 ]
 
 app.add_middleware(
@@ -84,6 +86,7 @@ async def room_not_found_handler(request: Request, exc: RoomNotFoundError):
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(rooms_router)
+app.include_router(asset_router)
 
 @app.get("/")
 async def root():

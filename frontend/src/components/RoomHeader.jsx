@@ -24,7 +24,7 @@ function RoomHeader({ room, pendingRequests, onApprove, onReject }) {
                     <div className="relative">
                         <button onClick={() => setRequestsOpen(prev => !prev)} className={`${isRequestsOpen ? 'text-white bg-zinc-700': 'text-zinc-400 bg-zinc-800'} hover:text-white hover:bg-zinc-700 px-3 py-1.5 rounded text-xs font-medium transition flex items-center gap-2 border border-zinc-700`}>
                             <Clock9 />Requests
-                            <span className='bg-indigo-600 text-white px-1.5 rounded-full text-[10px]'>{requestCount}</span>
+                            <span className={`${requestCount > 0 ? 'bg-indigo-600': 'bg-zinc-600'} text-white px-1.5 rounded-full text-[10px]`}>{requestCount}</span>
                         </button>
                         
                         {/* Request dropdown */}

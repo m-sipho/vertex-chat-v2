@@ -2,6 +2,7 @@ from fastapi import WebSocket
 from typing import Dict, List
 import asyncio
 import logging
+from starlette.websockets import WebSocketState
 
 # Configure logging
 logger = logging.getLogger("vertex")
@@ -86,6 +87,11 @@ class ConnectionManager:
 
     async def _safe_send(self, connection: WebSocket, message: dict, room_code: str):
         """Safely send a message with a strict timeout"""
+        # If the websocket is not connected, don't try to send
+        if (connection.client_state != WebSocketState.CONNECTED):
+            await self.disconnect(connection, room_code)
+            return
+        
         try:
             await asyncio.wait_for(connection.send_json(message), timeout=10)
         except Exception as e:
@@ -122,14 +128,27 @@ class ConnectionManager:
             asyncio.create_task(send_all())
     
     
-    async def broadcast_chat_message(self, room_code: str, username: str, text: str, timestamp: str):
+    async def broadcast_chat_message(self, room_code: str, username: str, avatar_seed: str, text: str, timestamp: str):
         """Sending a usual text message"""
         payload = {
             'type': 'chat',
             'username': username,
+            'avatar_seed': avatar_seed,
             'message': text,
             'timestamp': timestamp
             # 'timestamp': datetime.now(timezone.utc).astimezone().isoformat()
+        }
+        await self._broadcast(payload, room_code)
+    
+    async def broadcast_image_message(self, room_code: str, username: str, avatar_seed: str, filename: str, caption: str, timestamp: str):
+        """Sending an image"""
+        payload = {
+            "type": 'image',
+            'username': username,
+            'avatar_seed': avatar_seed,
+            'message': filename,
+            'caption': caption,
+            'timestamp': timestamp
         }
         await self._broadcast(payload, room_code)
     

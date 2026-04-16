@@ -7,6 +7,7 @@ class UserData(BaseModel):
     display_name: str | None = None
     id: uuid.UUID
     request_time: Optional[str] = None
+    avatar_seed: Optional[str] = None
 
 class LoginResponse(BaseModel):
     access_token: str

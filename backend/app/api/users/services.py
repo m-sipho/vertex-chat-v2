@@ -25,10 +25,12 @@ async def create_user(user_data: CreateUser, db: AsyncSession):
             detail="Password needs 8+ characters"
         )
     
+    cleaned_display_name = user_data.display_name.replace(" ", "_")
+    
     new_user = User(
         username=user_data.username,
         password=Hash.get_password_hashed(user_data.password),
-        display_name=user_data.display_name,
+        display_name=cleaned_display_name,
     )
 
     # Save to the database
@@ -49,7 +51,9 @@ async def change_display_name(display_name: str, current_user: UserID, db: Async
             detail="Not authorized to alter display name"
         )
     
-    existing_user.display_name = display_name
+    cleaned_display_name = display_name.replace(" ", "_")
+    
+    existing_user.display_name = cleaned_display_name
     db.add(existing_user)
     await db.commit()
     await db.refresh(existing_user)

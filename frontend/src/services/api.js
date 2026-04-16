@@ -1,3 +1,5 @@
+import axios from "axios";
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
 // Send requests to the backend with JWT Athentication
@@ -109,4 +111,56 @@ export async function rejectUser(roomCode, targetUsername) {
             target_username: targetUsername
         })
     });
+}
+
+export async function uploadImages(roomCode, file, setUploadProgress) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const token = sessionStorage.getItem("token");
+
+    try {
+        const response = await axios.post(
+            `${API_URL}/assets/upload/${roomCode}`,
+            formData,
+            {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                },
+                onUploadProgress: (progressEvent) => {
+                    const { loaded, total } = progressEvent;
+                    const percent = Math.round((loaded * 100) / total);
+                    
+                    console.log(
+                        `[UPLOAD] File: ${file.name} | Progress: ${percent}% | ` +
+                        `Sent: ${(loaded / 1024 / 1024).toFixed(2)}MB / ${(total / 1024 / 1024).toFixed(2)}MB`
+                    );
+                    
+                    if (setUploadProgress) {
+                        const percentCompleted = Math.round(
+                            (progressEvent.loaded * 100) / progressEvent.total
+                        );
+                        setUploadProgress(percentCompleted);
+                    }
+                }
+            }
+        );
+
+        return response.data;
+    } catch (error) {
+        throw new Error("Upload failed");
+    }
+}
+
+export async function getPresignedUrl(roomCode, filename) {
+    const token = sessionStorage.getItem("token");
+    const response = await axios.get(
+        `${API_URL}/assets/presigned/${roomCode}/${filename}`,
+        {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        }
+    );
+    return response.data.url;
 }

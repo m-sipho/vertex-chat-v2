@@ -25,6 +25,10 @@ router = APIRouter(
 @router.post("/create-room", status_code=status.HTTP_201_CREATED)
 async def create_room(title: str, current_user: Annotated[UserData, Depends(get_current_user)]):
     results = await global_manager.create_room(title, UserData(display_name=current_user.display_name, id=current_user.id))
+
+    creation_msg = f"{current_user.display_name} created the room"
+    await global_manager.add_message_to_history(results["room_code"], current_user.display_name, creation_msg, "system")
+
     return results
 
 @router.post("/join-room", status_code=status.HTTP_202_ACCEPTED)
@@ -65,6 +69,10 @@ async def approve(request: ApproveRequest, current_user: Annotated[UserData, Dep
     - Notify the room owner that the request was handled
     """
     status = await global_manager.approve_user(current_user.id, request.room_code, request.target_username)
+
+    join_msg = f"{request.target_username} joined the room"
+    await ws_manager.broadcast_system_message(request.room_code, join_msg)
+    await global_manager.add_message_to_history(request.room_code, request.target_username, join_msg, "system")
 
     # Get the room state
     room_state = await global_manager.get_room_state(request.room_code)
@@ -296,9 +304,9 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str, db: AsyncSess
     # Broadcast online presence
     await ws_manager.broadcast_presence(room_code, user.display_name, 'online')
 
-    join_msg = f"{user.display_name} joined the room"
-    await ws_manager.broadcast_system_message(room_code, join_msg)
-    await global_manager.add_message_to_history(room_code, user.display_name, join_msg, "system")
+    # join_msg = f"{user.display_name} joined the room"
+    # await ws_manager.broadcast_system_message(room_code, join_msg)
+    # await global_manager.add_message_to_history(room_code, user.display_name, join_msg, "system")
 
     try:
         while True:
@@ -325,10 +333,25 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str, db: AsyncSess
                     current_time = datetime.now(timezone.utc).isoformat()
 
                     # Broadcast message to the room
-                    await ws_manager.broadcast_chat_message(room_code, user.display_name, message, current_time)
+                    await ws_manager.broadcast_chat_message(room_code, user.display_name, user_result.avatar_seed, message, current_time)
 
-                    # Save the message in memeory
-                    await global_manager.add_message_to_history(room_code, user.display_name, message, "chat", current_time)
+                    # Save the message in memory
+                    await global_manager.add_message_to_history(room_code, user.display_name, message, "chat", user_result.avatar_seed, None, current_time)
+                
+                elif event_type == 'image':
+                    message = event.get('message')
+                    if not message:
+                        continue
+
+                    caption = event.get('caption')
+
+                    current_time = datetime.now(timezone.utc).isoformat()
+
+                    # Broadcast image(s) to the room
+                    await ws_manager.broadcast_image_message(room_code, user.display_name, user_result.avatar_seed, message, caption, current_time)
+
+                    # Save image(s) in memory
+                    await global_manager.add_message_to_history(room_code, user.display_name, message, "image", user_result.avatar_seed, caption, current_time)
 
                 elif event_type == 'typing':
                     ws_manager.broadcast_typing(room_code, user.display_name, websocket)
@@ -358,10 +381,7 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str, db: AsyncSess
                 ], websocket)
             
     except WebSocketDisconnect:
-        leave_msg = f"{user.display_name} left the room"
-        await ws_manager.broadcast_system_message(room_code, leave_msg)
         await ws_manager.broadcast_presence(room_code, user.display_name, 'offline')
-        await global_manager.add_message_to_history(room_code, user.display_name, leave_msg, "system")
 
         await ws_manager.disconnect(websocket, room_code)
     
